@@ -1,5 +1,7 @@
 # FTP-Protocol
-Server and Client download/upload files
+
+##Tarefas Realizadas
+>@Algy
 
 Features:
 - Client authentication;
