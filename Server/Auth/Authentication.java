@@ -1,4 +1,4 @@
-// package Server.Auth;
+package Server.Auth;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -39,8 +39,6 @@ public class Authentication {
             sc.close();
         } catch (FileNotFoundException fl) {
             System.err.println("File not found!");
-        } catch (IOException io) {
-            io.printStackTrace();
         }
 
         return hasMatched;

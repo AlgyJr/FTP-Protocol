@@ -48,8 +48,6 @@ public class Client {
             }
         }
 
-//        CommandIntepreter cl = new CommandIntepreter();
-//        cl.awaitCommand();
     }
 
 }
