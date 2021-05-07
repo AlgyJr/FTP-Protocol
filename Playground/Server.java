@@ -18,10 +18,13 @@ class ServerThread extends Thread {
       InputStream is = s.getInputStream();
       BufferedReader br = new BufferedReader(new InputStreamReader(is));
       String file;
-      while(!(file = br.readLine()).equals("quit")) {
-        System.out.println(file);
-        upload(s, file);
-      }
+      file = br.readLine();
+      System.out.println(file);
+      upload(s, file);
+//      while(!(file = br.readLine()).equals("quit")) {
+//        System.out.println(file);
+//        upload(s, file);
+//      }
       s.close();
     }catch (IOException oi) {
       oi.printStackTrace();
@@ -29,12 +32,27 @@ class ServerThread extends Thread {
   }
 
   private void upload(Socket s, String file) throws IOException {
-    OutputStream os = s.getOutputStream();
-    FileInputStream fi = new FileInputStream(file);
+
+    File fileObj = new File(file);
+    DataOutputStream os = new DataOutputStream(s.getOutputStream());
+
+    //OutputStream os = s.getOutputStream();
+    FileInputStream fi = new FileInputStream(fileObj);
+    long fileSize = fileObj.length();
+
+    //::>> Send File Size and File Name
+    os.writeUTF(fileObj.getName());
+    os.flush();
+    os.writeUTF(fileSize + "");
+    os.flush();
+
+    int chnkSize = 25;
+    byte[] byteArray = new byte[chnkSize];
     int bytes;
-    while ((bytes = fi.read()) != -1) {
+    while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
       System.out.println(bytes);
-      os.write(bytes);
+      os.write(byteArray);
+      os.flush();
     }
     os.close();
     System.out.println("File uploaded...");
@@ -44,7 +62,7 @@ class ServerThread extends Thread {
 public class Server {
   public static void main(String[] args) throws IOException {
 
-    ServerSocket ss = new ServerSocket(3000);
+    ServerSocket ss = new ServerSocket(3005);
     while(true) {
       Socket s = ss.accept();
       System.out.println("Server running");

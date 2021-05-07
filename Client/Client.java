@@ -21,7 +21,7 @@ public class Client {
         sc.nextLine(); //::>> Dispose of the result;
 
         String result, command;
-        CommandIntepreter ci = new CommandIntepreter();
+        CommandIntepreter ci = new CommandIntepreter(socket);
 
 
         Scanner input = new Scanner(System.in);

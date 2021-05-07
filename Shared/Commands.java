@@ -10,4 +10,6 @@ public class Commands {
     public static final String EXIT = "EXIT";
     public static final String MVS = "MVS"; //::>> Move to server side
     public static final String MVC = "MVC"; //::>> MOve to client side
+    public static final String GET = "GET"; //::>> Download File From Server
+
 }

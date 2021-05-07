@@ -14,9 +14,7 @@ class Connection extends Thread {
 
     public Connection(Socket s) throws IOException {
         this.socket = s;
-        this.pw = new PrintWriter(this.socket.getOutputStream());
-        this.sc = new Scanner(this.socket.getInputStream());
-        this.ci = new CommandInterpreter(sc, pw);
+        this.ci = new CommandInterpreter(this.socket);
         this.start();
     }
 

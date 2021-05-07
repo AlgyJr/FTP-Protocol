@@ -1,10 +1,11 @@
 package Client;
 
 import Shared.Commands;
+import Shared.Constants;
 import Shared.PathResolver;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -22,8 +23,10 @@ public class CommandIntepreter {
     private ArrayList<String> pathNames;
     public boolean isOnServer;
     private final String ROOT_CLIENT = System.getProperty("user.dir") + "/FileSystem/ClientRoot";
+    private Socket socket;
 
-    public CommandIntepreter() {
+    public CommandIntepreter(Socket socket) {
+        this.socket = socket;
         this.fs = "[" + Constants.CLIENT_SIDE.name() + "]~username@localhost:/";
         this.pathNames = new ArrayList<>();
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
@@ -56,6 +59,7 @@ public class CommandIntepreter {
             case Commands.SS: return "Aavailable";
             case Commands.PWD: return "Avaliable";
             case Commands.MKDIR: return makeDirectory(option);
+            case Commands.GET: return downloadFile(command);
             case Commands.MVS: {this.isOnServer = true; return "";}
             case Commands.MVC: {this.isOnServer = false; return "";}
             default:
@@ -133,6 +137,47 @@ public class CommandIntepreter {
         return "Could not create Folder!";
     }
 
+    private String downloadFile(String command) {
+        try {
+            DataInputStream is = new DataInputStream(this.socket.getInputStream());
+            PrintWriter pw = new PrintWriter(this.socket.getOutputStream());
+            String result, fileName, message;
+
+            //::>> Send Command
+            pw.println(command);
+            pw.flush();
+
+            //::>> Recieve Status
+            fileName = is.readUTF();
+            if(fileName.equals(Constants.FILE_NOT_FOUND.name())) {
+                is.close();
+                pw.close();
+                return "::>> Error: File Not Found";
+            }
+
+            FileOutputStream fo = new FileOutputStream(System.getProperty("user.dir") + "/FileSystem/ClientRoot/" +  fileName);
+            long fileSize = Long.parseLong(is.readUTF());
+
+            double readChunk = 0;
+            double percentage;
+
+            byte[] bytes;
+            while (!((bytes = is.readNBytes(25)).length == 0)) {
+                readChunk += bytes.length;
+                percentage = (readChunk / fileSize) * 100;
+                System.out.print("\r" + percentage + "%\r");
+                fo.write(bytes);
+            }
+
+            fo.close();
+            is.close();
+            pw.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "File Download Complete!";
+    }
 
 
     //::>> Getter and Setters
