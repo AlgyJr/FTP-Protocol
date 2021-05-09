@@ -241,6 +241,8 @@ class CommandInterpreter {
                             os.flush();
                         }
                         os.close();
+                        // Incrementação da quantidade de ficheiros descarregados
+                        c.incrementQtdDown();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -282,6 +284,8 @@ class CommandInterpreter {
                         fo.write(bytes);
                     }
                     fo.close();
+                    // Incrementação da quantidade de ficheiros carregados pelo cliente
+                    c.incrementQtdUp();
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 } catch (SocketException e) {
