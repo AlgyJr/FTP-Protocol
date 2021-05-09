@@ -19,7 +19,7 @@ public class Client {
     public static void main(String[] args) throws IOException, MalformedURLException, RemoteException, NotBoundException, InterruptedException {
         Socket socket = null;
         try {
-            socket = new Socket("localhost", 5000);
+            socket = new Socket("197.249.10.243", 5000);
         } catch (IOException e) {
             System.out.println("::: COULD NOT CONNECT TO SERVER :::");
             return;
@@ -30,7 +30,7 @@ public class Client {
         String [] commandNDoptions = {""};
         boolean isOnline = true;
 
-        InterfaceCounter ic = (InterfaceCounter) Naming.lookup("statistics");
+        InterfaceCounter ic = (InterfaceCounter) Naming.lookup("rmi://197.249.10.243:1099/statistics");
         Scanner input = new Scanner(System.in);
         CommandIntepreter ci = new CommandIntepreter(socket,sc, pw, ic);
 

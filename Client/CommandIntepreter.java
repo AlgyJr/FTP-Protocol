@@ -30,6 +30,7 @@ public class CommandIntepreter {
     private Socket socket;
     private InterfaceCounter counter;
     private String username;
+    private String hostForFileShare;
 
     public CommandIntepreter(Socket socket, Scanner sc, PrintWriter pw, InterfaceCounter counter) {
         this.socket = socket;
@@ -40,6 +41,7 @@ public class CommandIntepreter {
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
         this.counter = counter;
+        this.hostForFileShare = "197.249.10.243";
     }
 
     public String intepretCommand(String command) throws FileNotFoundException {
@@ -164,7 +166,7 @@ public class CommandIntepreter {
                 @Override
                 public void run() {
                     try {
-                        Socket socket = new Socket("localhost",portForFileSharing);
+                        Socket socket = new Socket(hostForFileShare,portForFileSharing);
                         DataInputStream is = new DataInputStream(socket.getInputStream());
                         FileOutputStream fo = new FileOutputStream( cwd.toString()  + "/" +  fileName);
                         double readChunk = 0;
@@ -233,7 +235,7 @@ public class CommandIntepreter {
         Thread toWait = new Thread(() -> {
 
             try {
-                Socket socket = new Socket("localhost",portForFileShare);
+                Socket socket = new Socket(hostForFileShare,portForFileShare);
                 DataOutputStream os = new DataOutputStream(socket.getOutputStream());
 
                 double readChunk = 0;
