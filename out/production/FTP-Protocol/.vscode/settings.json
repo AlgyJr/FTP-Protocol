@@ -1,6 +1,7 @@
 {
     "java.project.sourcePaths": [
         "Server/Auth",
-        "Server"
+        "Server",
+        "Client"
     ]
 }

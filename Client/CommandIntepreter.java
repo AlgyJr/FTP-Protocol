@@ -168,6 +168,16 @@ public class CommandIntepreter {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        try {
+            System.out.println();
+            System.out.println();
+            // Print of statistics
+            System.out.println(this.counter.statisticResume());
+        } catch (RemoteException rm) {
+            rm.printStackTrace();
+        }
+
         return "File Uploaded!";
     }
 
