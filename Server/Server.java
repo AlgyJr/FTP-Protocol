@@ -68,9 +68,9 @@ public class Server {
         LocateRegistry.createRegistry(1099).rebind("statistics", c);
         ServerSocket ss = new ServerSocket(5000);
         ServerSocket ss2 = new ServerSocket(5050);
-        System.out.println("The Server is on...");
         while(true) {
             new Connection(ss.accept(), ss2, c);
+
         }
     }
 }

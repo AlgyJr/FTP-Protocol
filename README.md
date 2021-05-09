@@ -8,4 +8,4 @@ Features:
 >- Change current client director;
 >- Download a file from server;
 >- Upload a file from client to server;
->- Indicate how many files downloaded and uploaded.
+>- Indicate how many files downloaded and uploaded (RMI module).

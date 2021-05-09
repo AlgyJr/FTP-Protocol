@@ -49,6 +49,7 @@ public class Client {
         if (!hasAuthenticated && tryChances <= 0)
             System.exit(-1);
 
+
         //::>> Get Server's cwd
         pw.println("pwd");
         pw.flush();
@@ -80,6 +81,14 @@ public class Client {
                 String [] commandNDoptions = fullCommand.split(" ");
 
                 if(commandNDoptions[0].toUpperCase().equals(Commands.GET)) {
+                    result = ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
+                    System.out.println(result);
+                    cwd = sc.nextLine();
+                    sc.nextLine();
+                    continue;
+                }
+
+                if(commandNDoptions[0].toUpperCase().equals(Commands.PUT)) {
                     result = ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
                     System.out.println(result);
                     cwd = sc.nextLine();

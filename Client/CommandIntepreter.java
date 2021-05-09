@@ -73,7 +73,7 @@ public class CommandIntepreter {
         this.counter = counter;
     }
 
-    public void awaitCommand() throws RemoteException {
+    public void awaitCommand() throws FileNotFoundException {
         Scanner sc = new Scanner(System.in);
         while (this.isOnServer) {
             System.out.print(this.fs + PathResolver.getRelPathString(this.pathNames) + "$ ");
@@ -82,7 +82,7 @@ public class CommandIntepreter {
         }
     }
 
-    public String intepretCommand(String command) {
+    public String intepretCommand(String command) throws FileNotFoundException {
         String [] commandNdOptions = command.split(" ");
         String option = "";
         String action = commandNdOptions[0];
@@ -100,11 +100,62 @@ public class CommandIntepreter {
             case Commands.PWD: return "Avaliable";
             case Commands.MKDIR: return makeDirectory(option);
             case Commands.GET: return downloadFile(command);
+            case Commands.PUT: return sendFile(command);
             case Commands.MVS: {this.isOnServer = true; return "";}
             case Commands.MVC: {this.isOnServer = false; return "";}
             default:
                 return "Client: Command Not Found";
         }
+
+    }
+
+    private String sendFile(String command) throws FileNotFoundException {
+
+        this.pw.println(command);
+        this.pw.flush();
+        ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, command.split(" ")[1], this.pathNames);
+        if (pathNames == null)  {
+            this.pw.println(Constants.FILE_NOT_FOUND.name());
+            this.pw.flush();
+            return Constants.FILE_NOT_FOUND.name();
+        }
+
+        String filePath = PathResolver.generatePath(this.cwd.toString(), pathNames).toString();
+        System.out.println(filePath);
+        File fileObj = new File(filePath);
+
+        FileInputStream fi = new FileInputStream(fileObj);
+        long fileSize = fileObj.length();
+        System.out.println(fileSize);
+
+        //::>> Send FileName and FileSize
+        this.pw.println(fileObj.getName());
+        this.pw.flush();
+        this.pw.println(fileSize);
+        this.pw.flush();
+
+        Thread toWait = new Thread(() -> {
+
+            DataOutputStream os = null;
+            try {
+                Socket socket = new Socket("localhost",5050);
+                os = new DataOutputStream(socket.getOutputStream());
+                int chnkSize = 100;
+                byte[] byteArray = new byte[chnkSize];
+                int bytes;
+                while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
+                    System.out.println(bytes);
+                    os.write(byteArray);
+                    os.flush();
+                }
+                os.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        toWait.start();
+        return "File Upload Complete\n";
     }
 
     //::>> COMMANDS
@@ -233,7 +284,6 @@ public class CommandIntepreter {
         }
 
 
-
             /*DataInputStream is = new DataInputStream(this.socket.getInputStream());
             PrintWriter pw = new PrintWriter(this.socket.getOutputStream());
             String result, fileName, message;
@@ -269,6 +319,7 @@ public class CommandIntepreter {
             fo.close();
             is.close();
             pw.close();*/
+
 
         return "\nFile Download Complete!";
     }
