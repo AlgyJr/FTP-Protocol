@@ -2,6 +2,7 @@ package Server;
 
 import Server.Auth.Authentication;
 import Server.rmi.Counter;
+import Shared.Constants;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -39,8 +40,10 @@ class Connection extends Thread {
 
     public void run() {
         // In case success on authentication
-        if (this.ci.isAuthenticated(auth))
+        if (this.ci.isAuthenticated(auth)) {
+            this.ci.setFs("[" + Constants.SERVER_SIDE.name() + "]~"+ auth.getUsername() + "@hostname:/");
             this.ci.awaitCommand();
+        }
     }
 }
 

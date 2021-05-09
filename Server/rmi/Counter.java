@@ -42,7 +42,6 @@ public class Counter extends UnicastRemoteObject implements InterfaceCounter {
 
     @Override
     public String statisticResume() throws RemoteException {
-        return  "Quantidade de ficheiros descarregados no servidor : " + this.qtdDown + "\n" +
-                "Quantidade de ficheiros carregados para o servdior: " + this.qtdUp + "\n";
+        return  "Downloads: " + this.qtdDown + " | Uploads: " + this.qtdUp;
     }
 }

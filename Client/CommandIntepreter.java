@@ -29,12 +29,13 @@ public class CommandIntepreter {
     private Scanner sc;
     private Socket socket;
     private InterfaceCounter counter;
+    private String username;
 
     public CommandIntepreter(Socket socket, Scanner sc, PrintWriter pw, InterfaceCounter counter) {
         this.socket = socket;
         this.sc = sc;
         this.pw = pw;
-        this.fs = "[" + Constants.CLIENT_SIDE.name() + "]~username@localhost:/";
+        this.fs = "[" + Constants.CLIENT_SIDE.name() + "]~@localhost:/";
         this.pathNames = new ArrayList<>();
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
@@ -60,6 +61,7 @@ public class CommandIntepreter {
             case Commands.PUT: return uploadFile(command);
             case Commands.MVS: {this.isOnServer = true; return "";}
             case Commands.MVC: {this.isOnServer = false; return "";}
+            case Commands.STAT: return printStat(command);
             case Commands.EXIT: return this.exit(command);
             default:
                 return "Client: Command Not Found";
@@ -76,7 +78,7 @@ public class CommandIntepreter {
             return ":::> Error: Invalid Path For Operation";
         }
 
-        Path pathToWalk = PathResolver.generatePath(ROOT_CLIENT, pathNames);
+        Path pathToWalk = PathResolver.generatePath(this.cwd.toString(), pathNames);
         String dirTree = "";
 
         try(Stream<Path> walk = Files.walk(pathToWalk, PathResolver.DEFAULT_PATH_WALK_DEPTH)) {
@@ -140,6 +142,8 @@ public class CommandIntepreter {
 
     private String downloadFile(String command) {
 
+            DecimalFormat df = new DecimalFormat();
+            df.setMaximumFractionDigits(2);
             String fileName;
             int chunkSize, portForFileSharing;
             this.pw.println(command);
@@ -169,7 +173,7 @@ public class CommandIntepreter {
                         while (!((bytes = is.readNBytes(chunkSize)).length == 0)) {
                             readChunk += bytes.length;
                             percentage = (readChunk / fileSize) * 100;
-                            System.out.print("\r" + percentage + "%");
+                            System.out.print("\r" + df.format(percentage) + "%");
                             fo.write(bytes);
                         }
                         fo.close();
@@ -187,15 +191,6 @@ public class CommandIntepreter {
             toWait.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
-
-        try {
-            System.out.println();
-            System.out.println();
-            // Print of statistics
-            System.out.println(this.counter.statisticResume());
-        } catch (RemoteException rm) {
-            rm.printStackTrace();
         }
 
         return "\nFile Download Complete!";
@@ -280,6 +275,14 @@ public class CommandIntepreter {
         return this.cwd.toString();
     }
 
+    private String printStat(String command) {
+        try {
+            return this.counter.statisticResume();
+        } catch (RemoteException e) {
+            return "::: Could not print statistics!";
+        }
+    }
+
     //::>> Getter and Setters
     public String getFs() {
         return fs;
@@ -287,5 +290,16 @@ public class CommandIntepreter {
 
     public ArrayList<String> getPathNames() {
         return pathNames;
+    }
+
+    public void setMainPath() {
+        ArrayList<String> newPathNames = PathResolver.resolvePath(this.cwd, this.username, this.pathNames);
+        if(newPathNames == null)
+            makeDirectory(this.username);
+        this.cwd = Path.of(this.cwd.toString() + "/" + this.username);
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

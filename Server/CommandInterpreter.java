@@ -13,6 +13,8 @@ import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.rmi.RemoteException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -116,6 +118,8 @@ class CommandInterpreter {
             case Commands.PWD: return getCurrentWorkingDirectory();
             case Commands.MKDIR: return makeDirectory(option);
             case Commands.PUT: return receiveFile(option);
+            case Commands.STAT: return printStat(command);
+            case Commands.SETCHUNK: return setChunkSize(option);
             case Commands.GET: sendFile(option); return "";
             case Commands.MVC: return "";
             case Commands.EXIT: {this.exit(); return "::: CLOSED CONNECTION";}
@@ -132,7 +136,7 @@ class CommandInterpreter {
             return ":::> Error: Invalid Path For Operation";
         }
 
-        Path pathToWalk = PathResolver.generatePath(ROOT_SERVER, pathNames);
+        Path pathToWalk = PathResolver.generatePath(this.cwd.toString(), pathNames);
         String dirTree = "";
 
         try(Stream<Path> walk = Files.walk(pathToWalk, PathResolver.DEFAULT_PATH_WALK_DEPTH)) {
@@ -196,6 +200,14 @@ class CommandInterpreter {
 
     private String getCurrentWorkingDirectory() {
         return this.cwd.toString();
+    }
+
+    private String printStat(String command) {
+        try {
+            return this.c.statisticResume();
+        } catch (RemoteException e) {
+            return "::: Could not print statistics!";
+        }
     }
 
     private void sendFile(String path) {
@@ -302,8 +314,25 @@ class CommandInterpreter {
         return "File Saved!";
     }
 
+    private String setChunkSize(String chunk) {
+        int chunkSize = Integer.parseInt(chunk);
+        chunkSize *= 1024;
+        DecimalFormat df = new DecimalFormat();
+        df.setMaximumFractionDigits(2);
+
+        try {
+            this.chunkSize = chunkSize;
+        } catch (NumberFormatException ex) {
+            return ":: COULD NOT SET CHUNK SIZE";
+        }
+        return "CHUNK SIZE: " + df.format(chunkSize / 1024.0 / 1024.0) + "MB";
+    }
+
     private void exit() {
         this.isOnline = false;
     }
 
+    public void setFs(String fs) {
+        this.fs = fs;
+    }
 }

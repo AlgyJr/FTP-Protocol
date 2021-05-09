@@ -32,6 +32,7 @@ public class Client {
 
         InterfaceCounter ic = (InterfaceCounter) Naming.lookup("statistics");
         Scanner input = new Scanner(System.in);
+        CommandIntepreter ci = new CommandIntepreter(socket,sc, pw, ic);
 
         String username, password;
         boolean hasAuthenticated = false;
@@ -41,6 +42,7 @@ public class Client {
             System.out.print(sc.nextLine());
             username = input.nextLine();
 
+            ci.setUsername(username);
             pw.println(username);
             pw.flush();
 
@@ -58,6 +60,7 @@ public class Client {
             System.exit(-1);
 
 
+        ci.setMainPath();
         //::>> Get Server's cwd
         pw.println("pwd");
         pw.flush();
@@ -65,7 +68,7 @@ public class Client {
         sc.nextLine(); //::>> Dispose of the result;
 
         String result, fullCommand;
-        CommandIntepreter ci = new CommandIntepreter(socket,sc, pw, ic);
+
 
 
         while (isOnline) {
