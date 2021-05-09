@@ -55,6 +55,14 @@ public class Client {
                     continue;
                 }
 
+                if(commandNDoptions[0].toUpperCase().equals(Commands.PUT)) {
+                    result = ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
+                    System.out.println(result);
+                    cwd = sc.nextLine();
+                    sc.nextLine();
+                    continue;
+                }
+
                 pw.println(fullCommand);
                 pw.flush();
 

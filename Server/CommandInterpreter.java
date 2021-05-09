@@ -72,6 +72,7 @@ class CommandInterpreter {
             case Commands.SS: return "Available";
             case Commands.PWD: return getCurrentWorkingDirectory();
             case Commands.MKDIR: return makeDirectory(option);
+            case Commands.PUT: return downloadFile(option);
             case Commands.GET:
                 try {
                     sendFile(option);
@@ -255,6 +256,61 @@ class CommandInterpreter {
             os.close();*/
 
 
+    }
+
+    private String downloadFile(String command) {
+        String result, fileName, message;
+        this.pw.println(command);
+        this.pw.flush();
+
+        //::>> Receber FileName e FileSize
+        fileName = this.sc.nextLine();
+        System.out.println(fileName);
+        if(fileName.equals(Constants.FILE_NOT_FOUND.name()))
+            return "::>> Error: File Not Found";
+
+        long fileSize = Long.parseLong(this.sc.nextLine());
+        System.out.println(fileSize);
+
+
+        Thread toWait = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    //Socket socket = new Socket("localhost",5000);
+                    DataInputStream is = new DataInputStream(socket.getInputStream());
+                    FileOutputStream fo = new FileOutputStream( cwd.toString()  + "/" +  fileName);
+                    double readChunk = 0;
+                    double percentage;
+
+                    byte[] bytes;
+                    while (!((bytes = is.readNBytes(100)).length == 0)) {
+                        readChunk += bytes.length;
+                        percentage = (readChunk / fileSize) * 100;
+                        System.out.print("\r" + percentage + "%");
+                        fo.write(bytes);
+                    }
+                    fo.close();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+
+
+        try {
+            toWait.start();
+            toWait.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+
+        return "\nFile Download Complete!";
     }
 
     private void exit() {
