@@ -150,14 +150,15 @@ public class CommandIntepreter {
             this.pw.flush();
 
             //::>> Receive chunkSize, portForFileSharing, FileName e FileSize
-            //::>> Receive Port Number to Send The File
-            portForFileSharing = Integer.parseInt(this.sc.nextLine());
-            chunkSize = Integer.parseInt(this.sc.nextLine());
+
             fileName = this.sc.nextLine();
             if(fileName.equals(Constants.FILE_NOT_FOUND.name()))
                 return "::>> Error: File Not Found";
 
             long fileSize = Long.parseLong(this.sc.nextLine());
+            //::>> Receive Port Number to Send The File
+            portForFileSharing = Integer.parseInt(this.sc.nextLine());
+            chunkSize = Integer.parseInt(this.sc.nextLine());
 
             Thread toWait = new Thread(new Runnable() {
                 @Override
@@ -211,9 +212,7 @@ public class CommandIntepreter {
             return Constants.FILE_NOT_FOUND.name();
         }
 
-        //::>> Receive Port Number to Send The File
-        portForFileShare = Integer.parseInt(this.sc.nextLine());
-        chnkSize = Integer.parseInt(this.sc.nextLine());
+
 
         String filePath = PathResolver.generatePath(this.cwd.toString(), pathNames).toString();
         File fileObj = new File(filePath);
@@ -224,6 +223,10 @@ public class CommandIntepreter {
         //::>> Send FileName and FileSize
         this.pw.println(fileObj.getName());
         this.pw.flush();
+
+        //::>> Receive Port Number to Send The File
+        portForFileShare = Integer.parseInt(this.sc.nextLine());
+        chnkSize = Integer.parseInt(this.sc.nextLine());
 
 
 

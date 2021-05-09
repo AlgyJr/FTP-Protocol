@@ -228,13 +228,13 @@ class CommandInterpreter {
             long fileSize = fileObj.length();
 
             //::>> Send chunkSize, portForFileSharing, FileName and FileSize
-            this.pw.println(Server.SERVER_FILE_SHARING_PORT);
-            this.pw.flush();
-            this.pw.println(chunkSize);
-            this.pw.flush();
             this.pw.println(fileObj.getName());
             this.pw.flush();
             this.pw.println(fileSize);
+            this.pw.flush();
+            this.pw.println(Server.SERVER_FILE_SHARING_PORT);
+            this.pw.flush();
+            this.pw.println(chunkSize);
             this.pw.flush();
 
 
@@ -271,16 +271,17 @@ class CommandInterpreter {
     private String receiveFile(String command) {
         String fileName;
 
-        this.pw.println(Server.SERVER_FILE_SHARING_PORT);
-        this.pw.flush();
-        this.pw.println(chunkSize);
-        this.pw.flush();
+
 
         //::>> Receber FileName e FileSize
         fileName = this.sc.nextLine();
         if(fileName.equals(Constants.FILE_NOT_FOUND.name()))
             return "::: FILE NOT FOUND";
 
+        this.pw.println(Server.SERVER_FILE_SHARING_PORT);
+        this.pw.flush();
+        this.pw.println(chunkSize);
+        this.pw.flush();
 
         Thread toWait = new Thread(new Runnable() {
             @Override
