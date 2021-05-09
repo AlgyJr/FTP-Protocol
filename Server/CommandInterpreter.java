@@ -6,6 +6,7 @@ import Shared.Commands;
 import Shared.PathResolver;
 
 import java.io.*;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -16,8 +17,12 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
+
+
 class CommandInterpreter {
     private Socket socket;
+    private ServerSocket fileSocket;
     private Scanner sc;
     private PrintWriter pw;
     private String fs;
@@ -25,9 +30,11 @@ class CommandInterpreter {
     private boolean isOnline;
     private ArrayList<String> pathNames;
     private final String ROOT_SERVER = System.getProperty("user.dir") + "/FileSystem/ServerRoot";
+    private int fileSharePort = 5001;
 
-    public CommandInterpreter(Socket socket) throws IOException {
+    public CommandInterpreter(Socket socket, ServerSocket fileSocket) throws IOException {
         this.socket = socket;
+        this.fileSocket = fileSocket;
         this.pw = new PrintWriter(this.socket.getOutputStream());
         this.sc = new Scanner(this.socket.getInputStream());
         this.fs = "[" + Constants.SERVER_SIDE.name() + "]~username@hostname:/";
@@ -68,7 +75,7 @@ class CommandInterpreter {
             case Commands.GET:
                 try {
                     sendFile(option);
-                    return "File Uploaded";
+                    return "";
                 } catch (IOException e) {
                     return "Could Not Upload File";
                 }
@@ -159,8 +166,62 @@ class CommandInterpreter {
 
     private void sendFile(String path) throws IOException {
 
-            DataOutputStream os = new DataOutputStream(this.socket.getOutputStream());
+            ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, path, this.pathNames);
+            if (pathNames == null)  {
+                this.pw.println(Constants.FILE_NOT_FOUND.name());
+                this.pw.flush();
+                return;
+            }
 
+            String filePath = PathResolver.generatePath(this.cwd.toString(), pathNames).toString();
+            System.out.println(filePath);
+            File fileObj = new File(filePath);
+
+            FileInputStream fi = new FileInputStream(fileObj);
+            long fileSize = fileObj.length();
+
+            //::>> Send FileName and FileSize
+            this.pw.println(fileObj.getName());
+            this.pw.flush();
+            this.pw.println(fileSize);
+            this.pw.flush();
+
+
+
+            Thread toWait = new Thread(new Runnable() {
+                @Override
+                public void run() {
+
+                    DataOutputStream os = null;
+                    try {
+                        Socket s = fileSocket.accept();
+                        os = new DataOutputStream(s.getOutputStream());
+                        int chnkSize = 100;
+                        byte[] byteArray = new byte[chnkSize];
+                        int bytes;
+                        while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
+                            System.out.println(bytes);
+                            os.write(byteArray);
+                            os.flush();
+                        }
+                        os.close();
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+
+            toWait.start();
+//        try {
+//            toWait.join();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+
+
+            /*DataOutputStream os = new DataOutputStream(this.socket.getOutputStream());
             ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, path, this.pathNames);
             if (pathNames == null)  {
                 os.writeUTF(Constants.FILE_NOT_FOUND.name());
@@ -182,6 +243,7 @@ class CommandInterpreter {
             os.writeUTF(fileSize + "");
             os.flush();
 
+
             int chnkSize = 25;
             byte[] byteArray = new byte[chnkSize];
             int bytes;
@@ -190,7 +252,9 @@ class CommandInterpreter {
                 os.write(byteArray);
                 os.flush();
             }
-            os.close();
+            os.close();*/
+
+
     }
 
     private void exit() {

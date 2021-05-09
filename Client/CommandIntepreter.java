@@ -15,22 +15,57 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CommandIntepreter {
 
+class FileSharingThread extends Thread {
+
+    private int fileSharingPort;
+
+    public FileSharingThread(int fileSharingPort) {
+        this.fileSharingPort = fileSharingPort;
+    }
+
+    public void run() {
+        try {
+            System.out.println("Client Started!");
+            Socket fileSocket = new Socket("localhost", this.fileSharingPort);
+            Scanner is = new Scanner(fileSocket.getInputStream());
+            PrintWriter pw = new PrintWriter(fileSocket.getOutputStream());
+
+            pw.println("Sending File...");
+            pw.flush();
+
+            System.out.println(is.nextLine()); //::>> Print "File Has Been Read"
+
+            is.close();
+            pw.close();
+            fileSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+public class CommandIntepreter {
 
     private String fs;
     private Path cwd;
     private ArrayList<String> pathNames;
     public boolean isOnServer;
     private final String ROOT_CLIENT = System.getProperty("user.dir") + "/FileSystem/ClientRoot";
+    private int sockerPort;
+    private PrintWriter pw;
+    private Scanner sc;
     private Socket socket;
-
-    public CommandIntepreter(Socket socket) {
+    public CommandIntepreter(Socket socket, Scanner sc, PrintWriter pw) {
         this.socket = socket;
+        this.sc = sc;
+        this.pw = pw;
         this.fs = "[" + Constants.CLIENT_SIDE.name() + "]~username@localhost:/";
         this.pathNames = new ArrayList<>();
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
+        this.sockerPort = 5001;
     }
 
     public void awaitCommand() {
@@ -138,8 +173,55 @@ public class CommandIntepreter {
     }
 
     private String downloadFile(String command) {
+            String result, fileName, message;
+            this.pw.println(command);
+            this.pw.flush();
+
+            //::>> Receber FileName e FileSize
+            fileName = this.sc.nextLine();
+            if(fileName.equals(Constants.FILE_NOT_FOUND.name()))
+                return "::>> Error: File Not Found";
+
+            long fileSize = Long.parseLong(this.sc.nextLine());
+
+            Thread toWait = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Socket socket = new Socket("localhost",5050);
+                        DataInputStream is = new DataInputStream(socket.getInputStream());
+                        FileOutputStream fo = new FileOutputStream( cwd.toString()  + "/" +  fileName);
+                        double readChunk = 0;
+                        double percentage;
+
+                        byte[] bytes;
+                        while (!((bytes = is.readNBytes(100)).length == 0)) {
+                            readChunk += bytes.length;
+                            percentage = (readChunk / fileSize) * 100;
+                            System.out.print("\r" + percentage + "%");
+                            fo.write(bytes);
+                        }
+                        fo.close();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            });
+
+
         try {
-            DataInputStream is = new DataInputStream(this.socket.getInputStream());
+            toWait.start();
+            toWait.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+
+            /*DataInputStream is = new DataInputStream(this.socket.getInputStream());
             PrintWriter pw = new PrintWriter(this.socket.getOutputStream());
             String result, fileName, message;
 
@@ -154,6 +236,8 @@ public class CommandIntepreter {
                 pw.close();
                 return "::>> Error: File Not Found";
             }
+
+            long fileSize = Long.parseLong(is.readUTF());
 
             FileOutputStream fo = new FileOutputStream(System.getProperty("user.dir") + "/FileSystem/ClientRoot/" +  fileName);
             long fileSize = Long.parseLong(is.readUTF());
@@ -171,12 +255,10 @@ public class CommandIntepreter {
 
             fo.close();
             is.close();
-            pw.close();
+            pw.close();*/
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return "File Download Complete!";
+
+        return "\nFile Download Complete!";
     }
 
 

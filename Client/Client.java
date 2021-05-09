@@ -8,6 +8,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
+
+
 public class Client {
     public static void main(String[] args) throws IOException {
         Socket socket = new Socket("localhost", 5000);
@@ -20,30 +22,49 @@ public class Client {
         String cwd = sc.nextLine();
         sc.nextLine(); //::>> Dispose of the result;
 
-        String result, command;
-        CommandIntepreter ci = new CommandIntepreter(socket);
+        String result, fullCommand;
+        CommandIntepreter ci = new CommandIntepreter(socket,sc, pw);
 
 
         Scanner input = new Scanner(System.in);
         while (true) {
             if(!ci.isOnServer) {
-                //ci.awaitCommand();
                 System.out.print(ci.getFs() + PathResolver.getRelPathString(ci.getPathNames()) + "$ ");
-                command = input.nextLine();
-                result = ci.intepretCommand(command).replaceAll("0-0", "\n");
+                fullCommand = input.nextLine();
+                String [] commandNDoptions = fullCommand.split(" ");
+
+                result = ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
                 System.out.println(result);
+                if(commandNDoptions[0].toUpperCase().equals(Commands.GET)) {
+                    result = sc.nextLine();
+                    result = sc.nextLine();
+                    System.out.println(result);
+                }
+
+
             } else {
                 System.out.print(cwd);
-                command = input.nextLine();
+                fullCommand = input.nextLine();
+                String [] commandNDoptions = fullCommand.split(" ");
 
-                pw.println(command);
+                if(commandNDoptions[0].toUpperCase().equals(Commands.GET)) {
+                    result = ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
+                    System.out.println(result);
+                    cwd = sc.nextLine();
+                    sc.nextLine();
+                    continue;
+                }
+
+                pw.println(fullCommand);
                 pw.flush();
+
 
                 cwd = sc.nextLine();
                 result = sc.nextLine().replaceAll("0-0", "\n");
                 System.out.println(result);
 
-                if(command.toUpperCase().equals(Commands.MVC))
+
+                if(commandNDoptions[0].toUpperCase().equals(Commands.MVC))
                     ci.isOnServer = false;
             }
         }
