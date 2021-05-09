@@ -26,8 +26,8 @@ class Connection extends Thread {
             System.out.println("::::::::::::::::::::\n\n");
             this.socket = s;
             this.fileSocket = fileSocket;
-            this.ci = new CommandInterpreter(this.socket, this.fileSocket, c);
             auth = new Authentication();
+            this.ci = new CommandInterpreter(this.socket, this.fileSocket, c);
             this.start();
         } catch (IOException e) {
             System.out.println(":::: COULD NOT OPEN CONNECTION");
