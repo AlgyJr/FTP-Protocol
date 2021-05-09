@@ -103,6 +103,7 @@ public class CommandIntepreter {
             case Commands.PUT: return sendFile(command);
             case Commands.MVS: {this.isOnServer = true; return "";}
             case Commands.MVC: {this.isOnServer = false; return "";}
+            case Commands.EXIT: return this.exit(command);
             default:
                 return "Client: Command Not Found";
         }
@@ -336,6 +337,11 @@ public class CommandIntepreter {
         return "\nFile Download Complete!";
     }
 
+    private String exit(String command) {
+        this.pw.println(command);
+        this.pw.flush();
+        return "";
+    }
 
     //::>> Getter and Setters
     public String getFs() {

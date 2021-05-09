@@ -18,12 +18,23 @@ class Connection extends Thread {
     private CommandInterpreter ci;
     private Authentication auth;
 
-    public Connection(Socket s, ServerSocket fileSocket, Counter c) throws IOException {
-        this.socket = s;
-        this.fileSocket = fileSocket;
-        this.ci = new CommandInterpreter(this.socket, this.fileSocket, c);
-        auth = new Authentication();
-        this.start();
+    public Connection(Socket s, ServerSocket fileSocket, Counter c)  {
+        try {
+            System.out.println(":::: NEW CONNECTION");
+            System.out.println("IP & Local Port: " + s.getInetAddress() +" : "+ s.getLocalPort() );
+            System.out.println("IP & Remote Port: "+ s.getInetAddress() + " : "+ s.getPort() );
+            System.out.println("::::::::::::::::::::\n\n");
+            this.socket = s;
+            this.fileSocket = fileSocket;
+            this.ci = new CommandInterpreter(this.socket, this.fileSocket, c);
+            auth = new Authentication();
+            this.start();
+        } catch (IOException e) {
+            System.out.println(":::: COULD NOT OPEN CONNECTION");
+            System.out.println("IP: "+ s.getInetAddress() + " Port: "+ s.getPort() );
+            System.out.println("::::::::::::::::::::\n\n");
+        }
+
     }
 
     public void run() {
@@ -38,15 +49,20 @@ public class Server {
     public static final int SERVER_PORT = 5000;
     public static final int SERVER_FILE_SHARING_PORT = 5050;
 
-    public static void main(String[] args) throws IOException {
-        Counter c = new Counter();
-        LocateRegistry.createRegistry(1099).rebind("statistics", c);
-        ServerSocket ss = new ServerSocket(5000);
-        ServerSocket ss2 = new ServerSocket(5050);
-        System.out.println("Server is running PORT:" + SERVER_PORT);
-        System.out.println("Server Files Port Will Run On PORT: " + SERVER_FILE_SHARING_PORT);
-        while(true) {
-            new Connection(ss.accept(), ss2, c);
+    public static void main(String[] args) {
+        try {
+            Counter c = new Counter();
+            LocateRegistry.createRegistry(1099).rebind("statistics", c);
+            ServerSocket ss = new ServerSocket(5000);
+            ServerSocket ss2 = new ServerSocket(5050);
+            System.out.println("Server is running PORT:" + SERVER_PORT);
+            System.out.println("Server Files Port Will Run On PORT: " + SERVER_FILE_SHARING_PORT);
+            while (true) {
+                new Connection(ss.accept(), ss2, c);
+            }
+        } catch (IOException ex) {
+            System.out.println("::::  SERVER CLOSED UNEXPECTEDLY");
+            System.out.println("::::::::::::::::::::\n\n");
         }
     }
 }

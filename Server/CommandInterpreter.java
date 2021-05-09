@@ -14,6 +14,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,49 +48,61 @@ class CommandInterpreter {
     }
 
     public boolean isAuthenticated(Authentication auth) {
-        String username, password;
-        boolean hasAuthenticated = false;
-        byte tryChances = 3;
+        try {
+            String username, password;
+            boolean hasAuthenticated = false;
+            byte tryChances = 3;
 
-        do {
-            pw.println("Utilizador: ");
-            pw.flush();
+            do {
+                pw.println("Utilizador: ");
+                pw.flush();
 
-            // Receive username
-            username = sc.nextLine();
+                // Receive username
+                username = sc.nextLine();
 
-            pw.println("Palavra-passe: ");
-            pw.flush();
+                pw.println("Palavra-passe: ");
+                pw.flush();
 
-            // Reveive password
-            password = sc.nextLine();
+                // Reveive password
+                password = sc.nextLine();
 
-            System.out.println("Username: " + username + "\nPassword: " + password);
+                // Then check credentials
+                hasAuthenticated = auth.authenticate(username, password);
 
-            // Then check credentials
-            hasAuthenticated = auth.authenticate(username, password);
+                if (hasAuthenticated) {
+                    pw.println("true");
+                } else {
+                    pw.println("false");
+                }
 
-            if (hasAuthenticated) {
-                pw.println("true");
-            } else {
-                pw.println("false");
-            }
-            pw.flush();
+                pw.flush();
+                tryChances--;
+                return hasAuthenticated;
+            } while (!hasAuthenticated && tryChances > 0);
 
-            tryChances--;
-        } while (!hasAuthenticated && tryChances > 0);
 
-        return hasAuthenticated;
+        } catch (NoSuchElementException ex) {
+            System.out.println(":::: CONNECTION CLOSED UNEXPECTEDLY");
+            System.out.println("IP: "+ this.socket.getInetAddress() + " Port: "+ this.socket.getPort() );
+            System.out.println("::::::::::::::::::::\n\n");
+        }
+        return false;
     }
 
     public void awaitCommand() {
-        String command, result;
-        while(this.isOnline) {
-            command = sc.nextLine();
-            result = intepretCommand(command);
-            pw.println(this.fs + PathResolver.getRelPathString(this.pathNames) + "$ ");
-            pw.println(result);
-            pw.flush();
+        try {
+            String command, result;
+            while (this.isOnline) {
+                command = sc.nextLine();
+                result = intepretCommand(command);
+                pw.println(this.fs + PathResolver.getRelPathString(this.pathNames) + "$ ");
+                pw.println(result);
+                pw.flush();
+            }
+        } catch (NoSuchElementException ex) {
+            System.out.println(":::: CONNECTIO CLOSED UNEXPECTEDLY");
+            System.out.println("IP: "+ this.socket.getInetAddress() + " Port: "+ this.socket.getPort() );
+            System.out.println("::::::::::::::::::::\n\n");
         }
     }
 
@@ -111,19 +124,9 @@ class CommandInterpreter {
             case Commands.PWD: return getCurrentWorkingDirectory();
             case Commands.MKDIR: return makeDirectory(option);
             case Commands.PUT: return downloadFile(option);
-            case Commands.GET:
-                try {
-                    sendFile(option);
-                    return "";
-                } catch (IOException e) {
-                    return "Could Not Upload File";
-                }
+            case Commands.GET: sendFile(option); return "";
             case Commands.MVC: return "";
-            case Commands.EXIT: {
-                this.exit();
-                return "Closing connection...";
-
-            }
+            case Commands.EXIT: {this.exit(); return "::: CLOSED CONNECTION";}
             default:
                 return "Command Not Found";
         }
@@ -203,10 +206,11 @@ class CommandInterpreter {
         return this.cwd.toString();
     }
 
-    private void sendFile(String path) throws IOException {
+    private void sendFile(String path) {
 
+        try {
             ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, path, this.pathNames);
-            if (pathNames == null)  {
+            if (pathNames == null) {
                 this.pw.println(Constants.FILE_NOT_FOUND.name());
                 this.pw.flush();
                 return;
@@ -224,7 +228,6 @@ class CommandInterpreter {
             this.pw.flush();
             this.pw.println(fileSize);
             this.pw.flush();
-
 
 
             Thread toWait = new Thread(new Runnable() {
@@ -249,6 +252,11 @@ class CommandInterpreter {
                 }
             });
             toWait.start();
+
+        } catch (IOException ex) {
+            this.pw.println("::: COULD NOT DOWNLOAD FILE");
+            this.pw.flush();
+        }
     }
 
     private String downloadFile(String command) {
@@ -257,7 +265,7 @@ class CommandInterpreter {
         //::>> Receber FileName e FileSize
         fileName = this.sc.nextLine();
         if(fileName.equals(Constants.FILE_NOT_FOUND.name()))
-            return "::>> Error: File Not Found";
+            return "::: FILE NOT FOUND";
 
         Thread toWait = new Thread(new Runnable() {
             @Override
@@ -281,7 +289,6 @@ class CommandInterpreter {
         });
 
         toWait.start();
-
         return "File Saved!";
     }
 

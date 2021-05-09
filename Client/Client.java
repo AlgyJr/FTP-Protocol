@@ -20,9 +20,10 @@ public class Client {
         Socket socket = new Socket("localhost", 5000);
         Scanner sc = new Scanner(socket.getInputStream());
         PrintWriter pw = new PrintWriter(socket.getOutputStream());
+        String [] commandNDoptions = {""};
+        boolean isOnline = true;
 
         InterfaceCounter ic = (InterfaceCounter) Naming.lookup("statistics");
-
         Scanner input = new Scanner(System.in);
 
         String username, password;
@@ -60,22 +61,27 @@ public class Client {
         CommandIntepreter ci = new CommandIntepreter(socket,sc, pw, ic);
 
 
-        while (true) {
+        while (isOnline) {
             if(!ci.isOnServer) {
                 System.out.print(ci.getFs() + PathResolver.getRelPathString(ci.getPathNames()) + "$ ");
                 fullCommand = input.nextLine();
-                String [] commandNDoptions = fullCommand.split(" ");
+                commandNDoptions = fullCommand.split(" ");
 
                 result = ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
                 System.out.println(result);
 
-                if(commandNDoptions[0].toUpperCase().equals(Commands.GET)) {
-                    result = sc.nextLine();
+                if (commandNDoptions[0].toUpperCase().equals(Commands.GET)) {
+                    sc.nextLine();
                     result = sc.nextLine();
                     System.out.println(result);
                 }
-                if(commandNDoptions[0].toUpperCase().equals(Commands.PUT)) {
+                if (commandNDoptions[0].toUpperCase().equals(Commands.PUT)) {
                     System.out.println(result);
+                    cwd = sc.nextLine();
+                    result = sc.nextLine();
+                    System.out.println(result);
+                }
+                if(commandNDoptions[0].toUpperCase().equals(Commands.EXIT)) {
                     cwd = sc.nextLine();
                     result = sc.nextLine();
                     System.out.println(result);
@@ -84,7 +90,7 @@ public class Client {
             } else {
                 System.out.print(cwd);
                 fullCommand = input.nextLine();
-                String [] commandNDoptions = fullCommand.split(" ");
+                commandNDoptions = fullCommand.split(" ");
 
                 if(commandNDoptions[0].toUpperCase().equals(Commands.GET)) {
                     result = ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
@@ -105,7 +111,6 @@ public class Client {
                 pw.println(fullCommand);
                 pw.flush();
 
-
                 cwd = sc.nextLine();
                 result = sc.nextLine().replaceAll("0-0", "\n");
                 System.out.println(result);
@@ -113,6 +118,10 @@ public class Client {
 
                 if(commandNDoptions[0].toUpperCase().equals(Commands.MVC))
                     ci.isOnServer = false;
+            }
+
+            if(commandNDoptions[0].toUpperCase().equals(Commands.EXIT)) {
+                isOnline = false;
             }
         }
 
