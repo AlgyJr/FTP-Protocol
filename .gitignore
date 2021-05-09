@@ -3,7 +3,8 @@
 
 # Files
 #Playground
-
+.idea
+out
 # Log file
 *.log
 

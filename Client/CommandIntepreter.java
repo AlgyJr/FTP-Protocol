@@ -2,6 +2,7 @@ package Client;
 
 import Shared.Commands;
 import Shared.Constants;
+import Shared.InterfaceCounter;
 import Shared.PathResolver;
 
 import java.io.*;
@@ -9,6 +10,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -57,7 +59,9 @@ public class CommandIntepreter {
     private PrintWriter pw;
     private Scanner sc;
     private Socket socket;
-    public CommandIntepreter(Socket socket, Scanner sc, PrintWriter pw) {
+    private InterfaceCounter counter;
+
+    public CommandIntepreter(Socket socket, Scanner sc, PrintWriter pw, InterfaceCounter counter) {
         this.socket = socket;
         this.sc = sc;
         this.pw = pw;
@@ -66,9 +70,10 @@ public class CommandIntepreter {
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
         this.sockerPort = 5001;
+        this.counter = counter;
     }
 
-    public void awaitCommand() {
+    public void awaitCommand() throws RemoteException {
         Scanner sc = new Scanner(System.in);
         while (this.isOnServer) {
             System.out.print(this.fs + PathResolver.getRelPathString(this.pathNames) + "$ ");
@@ -100,7 +105,6 @@ public class CommandIntepreter {
             default:
                 return "Client: Command Not Found";
         }
-
     }
 
     //::>> COMMANDS
@@ -219,6 +223,15 @@ public class CommandIntepreter {
             e.printStackTrace();
         }
 
+        try {
+            System.out.println();
+            System.out.println();
+            System.out.println("Quantidade de ficheiros descarregados: " + this.counter.getQtdDown());
+            System.out.println("Quantidade de ficheiros carregados: " + this.counter.getQtdUp());
+        } catch (RemoteException rm) {
+            rm.printStackTrace();
+        }
+
 
 
             /*DataInputStream is = new DataInputStream(this.socket.getInputStream());
@@ -256,7 +269,6 @@ public class CommandIntepreter {
             fo.close();
             is.close();
             pw.close();*/
-
 
         return "\nFile Download Complete!";
     }
