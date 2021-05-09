@@ -13,6 +13,7 @@ out
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
+/Server/Auth
 
 # Package Files #
 *.jar

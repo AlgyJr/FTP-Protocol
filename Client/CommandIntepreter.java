@@ -113,6 +113,7 @@ public class CommandIntepreter {
 
         this.pw.println(command);
         this.pw.flush();
+
         ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, command.split(" ")[1], this.pathNames);
         if (pathNames == null)  {
             this.pw.println(Constants.FILE_NOT_FOUND.name());
@@ -121,41 +122,52 @@ public class CommandIntepreter {
         }
 
         String filePath = PathResolver.generatePath(this.cwd.toString(), pathNames).toString();
-        System.out.println(filePath);
         File fileObj = new File(filePath);
 
         FileInputStream fi = new FileInputStream(fileObj);
         long fileSize = fileObj.length();
-        System.out.println(fileSize);
 
         //::>> Send FileName and FileSize
         this.pw.println(fileObj.getName());
         this.pw.flush();
-        this.pw.println(fileSize);
-        this.pw.flush();
 
         Thread toWait = new Thread(() -> {
 
-            DataOutputStream os = null;
             try {
                 Socket socket = new Socket("localhost",5050);
-                os = new DataOutputStream(socket.getOutputStream());
+                DataOutputStream os = new DataOutputStream(socket.getOutputStream());
+
+                double readChunk = 0;
+                double percentage;
                 int chnkSize = 100;
+                int bytes;;
+
                 byte[] byteArray = new byte[chnkSize];
-                int bytes;
+
                 while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
-                    System.out.println(bytes);
+
+                    //::>> Print Progress
+                    readChunk += byteArray.length;
+                    percentage = (readChunk / fileSize) * 100;
+                    System.out.print("\r" + percentage + "%");
                     os.write(byteArray);
                     os.flush();
                 }
+                System.out.println();
                 os.close();
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
-        toWait.start();
-        return "File Upload Complete\n";
+
+        try {
+            toWait.start();
+            toWait.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return "File Uploaded!";
     }
 
     //::>> COMMANDS
@@ -228,7 +240,7 @@ public class CommandIntepreter {
     }
 
     private String downloadFile(String command) {
-            String result, fileName, message;
+            String fileName;
             this.pw.println(command);
             this.pw.flush();
 
@@ -265,7 +277,6 @@ public class CommandIntepreter {
 
                 }
             });
-
 
         try {
             toWait.start();
@@ -319,6 +330,7 @@ public class CommandIntepreter {
             fo.close();
             is.close();
             pw.close();*/
+
 
 
         return "\nFile Download Complete!";

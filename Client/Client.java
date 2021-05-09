@@ -68,12 +68,18 @@ public class Client {
 
                 result = ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
                 System.out.println(result);
+
                 if(commandNDoptions[0].toUpperCase().equals(Commands.GET)) {
                     result = sc.nextLine();
                     result = sc.nextLine();
                     System.out.println(result);
                 }
-
+                if(commandNDoptions[0].toUpperCase().equals(Commands.PUT)) {
+                    System.out.println(result);
+                    cwd = sc.nextLine();
+                    result = sc.nextLine();
+                    System.out.println(result);
+                }
 
             } else {
                 System.out.print(cwd);
@@ -89,10 +95,10 @@ public class Client {
                 }
 
                 if(commandNDoptions[0].toUpperCase().equals(Commands.PUT)) {
-                    result = ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
-                    System.out.println(result);
+                    ci.intepretCommand(fullCommand).replaceAll("0-0", "\n");
                     cwd = sc.nextLine();
-                    sc.nextLine();
+                    result = sc.nextLine();
+                    System.out.println(result);
                     continue;
                 }
 

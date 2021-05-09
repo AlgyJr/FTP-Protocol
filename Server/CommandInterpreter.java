@@ -230,13 +230,12 @@ class CommandInterpreter {
             Thread toWait = new Thread(new Runnable() {
                 @Override
                 public void run() {
-
-                    DataOutputStream os = null;
                     try {
                         Socket s = fileSocket.accept();
-                        os = new DataOutputStream(s.getOutputStream());
+                        DataOutputStream os = new DataOutputStream(s.getOutputStream());
                         int chnkSize = 100;
                         byte[] byteArray = new byte[chnkSize];
+
                         int bytes;
                         while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
                             System.out.println(bytes);
@@ -244,89 +243,32 @@ class CommandInterpreter {
                             os.flush();
                         }
                         os.close();
-
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             });
-
-
             toWait.start();
-//        try {
-//            toWait.join();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
-
-            /*DataOutputStream os = new DataOutputStream(this.socket.getOutputStream());
-            ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, path, this.pathNames);
-            if (pathNames == null)  {
-                os.writeUTF(Constants.FILE_NOT_FOUND.name());
-                os.flush();
-                return;
-            }
-
-            String filePath = PathResolver.generatePath(this.cwd.toString(), pathNames).toString();
-            System.out.println(filePath);
-
-            File fileObj = new File(filePath);
-
-            FileInputStream fi = new FileInputStream(fileObj);
-            long fileSize = fileObj.length();
-
-            //::>> Send File Size and File Name
-            os.writeUTF(fileObj.getName());
-            os.flush();
-            os.writeUTF(fileSize + "");
-            os.flush();
-
-
-            int chnkSize = 25;
-            byte[] byteArray = new byte[chnkSize];
-            int bytes;
-            while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
-                System.out.println(bytes);
-                os.write(byteArray);
-                os.flush();
-            }
-            os.close();*/
-
-
     }
 
     private String downloadFile(String command) {
-        String result, fileName, message;
-        //this.pw.println(command);
-        //this.pw.flush();
+        String fileName;
 
         //::>> Receber FileName e FileSize
         fileName = this.sc.nextLine();
-        System.out.println(fileName);
         if(fileName.equals(Constants.FILE_NOT_FOUND.name()))
             return "::>> Error: File Not Found";
-
-        long fileSize = Long.parseLong(this.sc.nextLine());
-        System.out.println(fileSize);
-
 
         Thread toWait = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Socket s = fileSocket.accept();
-                    //Socket socket = new Socket("localhost",5050);
-                    DataInputStream is = new DataInputStream(socket.getInputStream());
+                    Socket fileSharingSocket = fileSocket.accept();
+                    DataInputStream is = new DataInputStream(fileSharingSocket.getInputStream());
                     FileOutputStream fo = new FileOutputStream( cwd.toString()  + "/" +  fileName);
-                    double readChunk = 0;
-                    double percentage;
 
                     byte[] bytes;
                     while (!((bytes = is.readNBytes(100)).length == 0)) {
-                        readChunk += bytes.length;
-                        percentage = (readChunk / fileSize) * 100;
-                        System.out.print("\r" + percentage + "%");
                         fo.write(bytes);
                     }
                     fo.close();
@@ -335,21 +277,12 @@ class CommandInterpreter {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
             }
         });
 
+        toWait.start();
 
-        try {
-            toWait.start();
-            toWait.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
-
-        return "\nFile Download Complete!";
+        return "File Saved!";
     }
 
     private void exit() {
