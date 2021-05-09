@@ -48,45 +48,38 @@ class CommandInterpreter {
     }
 
     public boolean isAuthenticated(Authentication auth) {
-        try {
-            String username, password;
-            boolean hasAuthenticated = false;
-            byte tryChances = 3;
+        String username, password;
+        boolean hasAuthenticated = false;
+        byte tryChances = 3;
 
-            do {
-                pw.println("Utilizador: ");
-                pw.flush();
+        do {
+            pw.println("Utilizador: ");
+            pw.flush();
 
-                // Receive username
-                username = sc.nextLine();
+            // Receive username
+            username = sc.nextLine();
 
-                pw.println("Palavra-passe: ");
-                pw.flush();
+            pw.println("Palavra-passe: ");
+            pw.flush();
 
-                // Reveive password
-                password = sc.nextLine();
+            // Reveive password
+            password = sc.nextLine();
 
-                // Then check credentials
-                hasAuthenticated = auth.authenticate(username, password);
+            // Then check credentials
+            hasAuthenticated = auth.authenticate(username, password);
 
-                if (hasAuthenticated) {
-                    pw.println("true");
-                } else {
-                    pw.println("false");
-                }
+            if (hasAuthenticated) {
+                pw.println("true");
+            } else {
+                pw.println("false");
+            }
 
-                pw.flush();
-                tryChances--;
-                return hasAuthenticated;
-            } while (!hasAuthenticated && tryChances > 0);
+            pw.flush();
+            tryChances--;
 
+        } while (!hasAuthenticated && tryChances > 0);
 
-        } catch (NoSuchElementException ex) {
-            System.out.println(":::: CONNECTION CLOSED UNEXPECTEDLY");
-            System.out.println("IP: "+ this.socket.getInetAddress() + " Port: "+ this.socket.getPort() );
-            System.out.println("::::::::::::::::::::\n\n");
-        }
-        return false;
+        return hasAuthenticated;
     }
 
     public void awaitCommand() {
