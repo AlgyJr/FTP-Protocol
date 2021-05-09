@@ -17,7 +17,14 @@ import java.util.Scanner;
 
 public class Client {
     public static void main(String[] args) throws IOException, MalformedURLException, RemoteException, NotBoundException, InterruptedException {
-        Socket socket = new Socket("localhost", 5000);
+        Socket socket = null;
+        try {
+            socket = new Socket("localhost", 5000);
+        } catch (IOException e) {
+            System.out.println("::: COULD NOT CONNECT TO SERVER :::");
+            return;
+        }
+
         Scanner sc = new Scanner(socket.getInputStream());
         PrintWriter pw = new PrintWriter(socket.getOutputStream());
         String [] commandNDoptions = {""};

@@ -9,6 +9,7 @@ import Server.rmi.Counter;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -32,8 +33,8 @@ class CommandInterpreter {
     private boolean isOnline;
     private ArrayList<String> pathNames;
     private final String ROOT_SERVER = System.getProperty("user.dir") + "/FileSystem/ServerRoot";
-    private int fileSharePort = 5001;
     private Counter c;
+    private int chunkSize = 100;
 
     public CommandInterpreter(Socket socket, ServerSocket fileSocket, Counter c) throws IOException {
         this.socket = socket;
@@ -112,11 +113,9 @@ class CommandInterpreter {
         switch (action) {
             case Commands.CD: changeDirectory(option); return "";
             case Commands.LS: return listDirectory(option);
-            case Commands.CS: return "Available";
-            case Commands.SS: return "Available";
             case Commands.PWD: return getCurrentWorkingDirectory();
             case Commands.MKDIR: return makeDirectory(option);
-            case Commands.PUT: return downloadFile(option);
+            case Commands.PUT: return receiveFile(option);
             case Commands.GET: sendFile(option); return "";
             case Commands.MVC: return "";
             case Commands.EXIT: {this.exit(); return "::: CLOSED CONNECTION";}
@@ -216,7 +215,11 @@ class CommandInterpreter {
             FileInputStream fi = new FileInputStream(fileObj);
             long fileSize = fileObj.length();
 
-            //::>> Send FileName and FileSize
+            //::>> Send chunkSize, portForFileSharing, FileName and FileSize
+            this.pw.println(Server.SERVER_FILE_SHARING_PORT);
+            this.pw.flush();
+            this.pw.println(chunkSize);
+            this.pw.flush();
             this.pw.println(fileObj.getName());
             this.pw.flush();
             this.pw.println(fileSize);
@@ -234,7 +237,6 @@ class CommandInterpreter {
 
                         int bytes;
                         while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
-                            System.out.println(bytes);
                             os.write(byteArray);
                             os.flush();
                         }
@@ -252,29 +254,40 @@ class CommandInterpreter {
         }
     }
 
-    private String downloadFile(String command) {
+    private String receiveFile(String command) {
         String fileName;
+
+        this.pw.println(Server.SERVER_FILE_SHARING_PORT);
+        this.pw.flush();
+        this.pw.println(chunkSize);
+        this.pw.flush();
 
         //::>> Receber FileName e FileSize
         fileName = this.sc.nextLine();
         if(fileName.equals(Constants.FILE_NOT_FOUND.name()))
             return "::: FILE NOT FOUND";
 
+
         Thread toWait = new Thread(new Runnable() {
             @Override
             public void run() {
+                Socket fileSharingSocket;
                 try {
-                    Socket fileSharingSocket = fileSocket.accept();
+                    fileSharingSocket = fileSocket.accept();
                     DataInputStream is = new DataInputStream(fileSharingSocket.getInputStream());
                     FileOutputStream fo = new FileOutputStream( cwd.toString()  + "/" +  fileName);
 
                     byte[] bytes;
-                    while (!((bytes = is.readNBytes(100)).length == 0)) {
+                    while (!((bytes = is.readNBytes(chunkSize)).length == 0)) {
                         fo.write(bytes);
                     }
                     fo.close();
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
+                } catch (SocketException e) {
+                    System.out.println(":::: COULD NOT OPEN CONNECTION");
+                    System.out.println("IP: "+ socket.getInetAddress() + " Port: "+ socket.getPort() );
+                    System.out.println("::::::::::::::::::::\n\n");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

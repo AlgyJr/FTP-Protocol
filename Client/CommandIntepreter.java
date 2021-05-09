@@ -11,42 +11,12 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.rmi.RemoteException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-
-class FileSharingThread extends Thread {
-
-    private int fileSharingPort;
-
-    public FileSharingThread(int fileSharingPort) {
-        this.fileSharingPort = fileSharingPort;
-    }
-
-    public void run() {
-        try {
-            System.out.println("Client Started!");
-            Socket fileSocket = new Socket("localhost", this.fileSharingPort);
-            Scanner is = new Scanner(fileSocket.getInputStream());
-            PrintWriter pw = new PrintWriter(fileSocket.getOutputStream());
-
-            pw.println("Sending File...");
-            pw.flush();
-
-            System.out.println(is.nextLine()); //::>> Print "File Has Been Read"
-
-            is.close();
-            pw.close();
-            fileSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-}
-
 
 public class CommandIntepreter {
 
@@ -55,7 +25,6 @@ public class CommandIntepreter {
     private ArrayList<String> pathNames;
     public boolean isOnServer;
     private final String ROOT_CLIENT = System.getProperty("user.dir") + "/FileSystem/ClientRoot";
-    private int sockerPort;
     private PrintWriter pw;
     private Scanner sc;
     private Socket socket;
@@ -69,17 +38,7 @@ public class CommandIntepreter {
         this.pathNames = new ArrayList<>();
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
-        this.sockerPort = 5001;
         this.counter = counter;
-    }
-
-    public void awaitCommand() throws FileNotFoundException {
-        Scanner sc = new Scanner(System.in);
-        while (this.isOnServer) {
-            System.out.print(this.fs + PathResolver.getRelPathString(this.pathNames) + "$ ");
-            String command = sc.nextLine();
-            System.out.println(intepretCommand(command));
-        }
     }
 
     public String intepretCommand(String command) throws FileNotFoundException {
@@ -95,12 +54,10 @@ public class CommandIntepreter {
         switch (action) {
             case Commands.CD: changeDirectory(option); return "";
             case Commands.LS: return listDirectory(option);
-            case Commands.CS: return "Available";
-            case Commands.SS: return "Aavailable";
-            case Commands.PWD: return "Avaliable";
+            case Commands.PWD: return getCurrentWorkingDirectory();
             case Commands.MKDIR: return makeDirectory(option);
             case Commands.GET: return downloadFile(command);
-            case Commands.PUT: return sendFile(command);
+            case Commands.PUT: return uploadFile(command);
             case Commands.MVS: {this.isOnServer = true; return "";}
             case Commands.MVC: {this.isOnServer = false; return "";}
             case Commands.EXIT: return this.exit(command);
@@ -110,66 +67,7 @@ public class CommandIntepreter {
 
     }
 
-    private String sendFile(String command) throws FileNotFoundException {
 
-        this.pw.println(command);
-        this.pw.flush();
-
-        ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, command.split(" ")[1], this.pathNames);
-        if (pathNames == null)  {
-            this.pw.println(Constants.FILE_NOT_FOUND.name());
-            this.pw.flush();
-            return Constants.FILE_NOT_FOUND.name();
-        }
-
-        String filePath = PathResolver.generatePath(this.cwd.toString(), pathNames).toString();
-        File fileObj = new File(filePath);
-
-        FileInputStream fi = new FileInputStream(fileObj);
-        long fileSize = fileObj.length();
-
-        //::>> Send FileName and FileSize
-        this.pw.println(fileObj.getName());
-        this.pw.flush();
-
-        Thread toWait = new Thread(() -> {
-
-            try {
-                Socket socket = new Socket("localhost",5050);
-                DataOutputStream os = new DataOutputStream(socket.getOutputStream());
-
-                double readChunk = 0;
-                double percentage;
-                int chnkSize = 100;
-                int bytes;;
-
-                byte[] byteArray = new byte[chnkSize];
-
-                while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
-
-                    //::>> Print Progress
-                    readChunk += byteArray.length;
-                    percentage = (readChunk / fileSize) * 100;
-                    System.out.print("\r" + percentage + "%");
-                    os.write(byteArray);
-                    os.flush();
-                }
-                System.out.println();
-                os.close();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        try {
-            toWait.start();
-            toWait.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return "File Uploaded!";
-    }
 
     //::>> COMMANDS
     private String listDirectory(String path) {
@@ -241,11 +139,16 @@ public class CommandIntepreter {
     }
 
     private String downloadFile(String command) {
+
             String fileName;
+            int chunkSize, portForFileSharing;
             this.pw.println(command);
             this.pw.flush();
 
-            //::>> Receber FileName e FileSize
+            //::>> Receive chunkSize, portForFileSharing, FileName e FileSize
+            //::>> Receive Port Number to Send The File
+            portForFileSharing = Integer.parseInt(this.sc.nextLine());
+            chunkSize = Integer.parseInt(this.sc.nextLine());
             fileName = this.sc.nextLine();
             if(fileName.equals(Constants.FILE_NOT_FOUND.name()))
                 return "::>> Error: File Not Found";
@@ -256,14 +159,14 @@ public class CommandIntepreter {
                 @Override
                 public void run() {
                     try {
-                        Socket socket = new Socket("localhost",5050);
+                        Socket socket = new Socket("localhost",portForFileSharing);
                         DataInputStream is = new DataInputStream(socket.getInputStream());
                         FileOutputStream fo = new FileOutputStream( cwd.toString()  + "/" +  fileName);
                         double readChunk = 0;
                         double percentage;
 
                         byte[] bytes;
-                        while (!((bytes = is.readNBytes(100)).length == 0)) {
+                        while (!((bytes = is.readNBytes(chunkSize)).length == 0)) {
                             readChunk += bytes.length;
                             percentage = (readChunk / fileSize) * 100;
                             System.out.print("\r" + percentage + "%");
@@ -295,52 +198,86 @@ public class CommandIntepreter {
             rm.printStackTrace();
         }
 
-
-            /*DataInputStream is = new DataInputStream(this.socket.getInputStream());
-            PrintWriter pw = new PrintWriter(this.socket.getOutputStream());
-            String result, fileName, message;
-
-            //::>> Send Command
-            pw.println(command);
-            pw.flush();
-
-            //::>> Recieve Status
-            fileName = is.readUTF();
-            if(fileName.equals(Constants.FILE_NOT_FOUND.name())) {
-                is.close();
-                pw.close();
-                return "::>> Error: File Not Found";
-            }
-
-            long fileSize = Long.parseLong(is.readUTF());
-
-            FileOutputStream fo = new FileOutputStream(System.getProperty("user.dir") + "/FileSystem/ClientRoot/" +  fileName);
-            long fileSize = Long.parseLong(is.readUTF());
-
-            double readChunk = 0;
-            double percentage;
-
-            byte[] bytes;
-            while (!((bytes = is.readNBytes(25)).length == 0)) {
-                readChunk += bytes.length;
-                percentage = (readChunk / fileSize) * 100;
-                System.out.print("\r" + percentage + "%\r");
-                fo.write(bytes);
-            }
-
-            fo.close();
-            is.close();
-            pw.close();*/
-
-
-
         return "\nFile Download Complete!";
+    }
+
+    private String uploadFile(String command) throws FileNotFoundException {
+
+        this.pw.println(command);
+        this.pw.flush();
+
+        int portForFileShare, chnkSize;
+        DecimalFormat df = new DecimalFormat();
+        df.setMaximumFractionDigits(2);
+        ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, command.split(" ")[1], this.pathNames);
+        if (pathNames == null)  {
+            this.pw.println(Constants.FILE_NOT_FOUND.name());
+            this.pw.flush();
+            return Constants.FILE_NOT_FOUND.name();
+        }
+
+        //::>> Receive Port Number to Send The File
+        portForFileShare = Integer.parseInt(this.sc.nextLine());
+        chnkSize = Integer.parseInt(this.sc.nextLine());
+
+        String filePath = PathResolver.generatePath(this.cwd.toString(), pathNames).toString();
+        File fileObj = new File(filePath);
+
+        FileInputStream fi = new FileInputStream(fileObj);
+        long fileSize = fileObj.length();
+
+        //::>> Send FileName and FileSize
+        this.pw.println(fileObj.getName());
+        this.pw.flush();
+
+
+
+        Thread toWait = new Thread(() -> {
+
+            try {
+                Socket socket = new Socket("localhost",portForFileShare);
+                DataOutputStream os = new DataOutputStream(socket.getOutputStream());
+
+                double readChunk = 0;
+                double percentage;
+                int bytes;;
+
+                byte[] byteArray = new byte[chnkSize];
+
+                while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
+
+                    //::>> Print Progress
+                    readChunk += byteArray.length;
+                    percentage = (readChunk / fileSize) * 100;
+                    System.out.print("\r" + df.format(percentage) + "%");
+                    os.write(byteArray);
+                    os.flush();
+                }
+                System.out.println();
+                os.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        try {
+            toWait.start();
+            toWait.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return "File Uploaded!";
     }
 
     private String exit(String command) {
         this.pw.println(command);
         this.pw.flush();
         return "";
+    }
+
+    private String getCurrentWorkingDirectory() {
+        return this.cwd.toString();
     }
 
     //::>> Getter and Setters

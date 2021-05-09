@@ -53,8 +53,8 @@ public class Server {
         try {
             Counter c = new Counter();
             LocateRegistry.createRegistry(1099).rebind("statistics", c);
-            ServerSocket ss = new ServerSocket(5000);
-            ServerSocket ss2 = new ServerSocket(5050);
+            ServerSocket ss = new ServerSocket(SERVER_PORT);
+            ServerSocket ss2 = new ServerSocket(SERVER_FILE_SHARING_PORT);
             System.out.println("Server is running PORT:" + SERVER_PORT);
             System.out.println("Server Files Port Will Run On PORT: " + SERVER_FILE_SHARING_PORT);
             while (true) {
