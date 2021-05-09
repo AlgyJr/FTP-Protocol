@@ -18,9 +18,36 @@ import java.util.Scanner;
 public class Client {
     public static void main(String[] args) throws IOException, MalformedURLException, RemoteException, NotBoundException, InterruptedException {
         Socket socket = new Socket("localhost", 5000);
-        InterfaceCounter ic = (InterfaceCounter) Naming.lookup("tableload");
         Scanner sc = new Scanner(socket.getInputStream());
         PrintWriter pw = new PrintWriter(socket.getOutputStream());
+
+        InterfaceCounter ic = (InterfaceCounter) Naming.lookup("statistics");
+
+        Scanner input = new Scanner(System.in);
+
+        String username, password;
+        boolean hasAuthenticated = false;
+        byte tryChances = 3;
+
+        do {
+            System.out.print(sc.nextLine());
+            username = input.nextLine();
+
+            pw.println(username);
+            pw.flush();
+
+            System.out.print(sc.nextLine());
+            password = input.nextLine();
+
+            pw.println(password);
+            pw.flush();
+
+            System.out.println();
+            tryChances--;
+        } while(!(hasAuthenticated = Boolean.parseBoolean(sc.nextLine())) && tryChances > 0);
+
+        if (!hasAuthenticated && tryChances <= 0)
+            System.exit(-1);
 
         //::>> Get Server's cwd
         pw.println("pwd");
@@ -32,7 +59,6 @@ public class Client {
         CommandIntepreter ci = new CommandIntepreter(socket,sc, pw, ic);
 
 
-        Scanner input = new Scanner(System.in);
         while (true) {
             if(!ci.isOnServer) {
                 System.out.print(ci.getFs() + PathResolver.getRelPathString(ci.getPathNames()) + "$ ");

@@ -1,6 +1,7 @@
 package Server;
 
 
+import Server.Auth.Authentication;
 import Shared.Constants;
 import Shared.Commands;
 import Shared.PathResolver;
@@ -46,9 +47,45 @@ class CommandInterpreter {
         this.c = c;
     }
 
+    public boolean isAuthenticated(Authentication auth) {
+        String username, password;
+        boolean hasAuthenticated = false;
+        byte tryChances = 3;
+
+         do {
+            pw.println("Utilizador: ");
+            pw.flush();
+
+            // Receive username
+            username = sc.nextLine();
+
+            pw.println("Palavra-passe: ");
+            pw.flush();
+
+            // Reveive password
+            password = sc.nextLine();
+
+            System.out.println("Username: " + username + "\nPassword: " + password);
+
+            // Then check credentials
+            hasAuthenticated = auth.authenticate(username, password);
+
+             if (hasAuthenticated) {
+                 pw.println("true");
+             } else {
+                 pw.println("false");
+             }
+             pw.flush();
+
+             tryChances--;
+         } while (!hasAuthenticated && tryChances > 0);
+
+        return hasAuthenticated;
+    }
 
     public void awaitCommand() {
         String command, result;
+        System.out.println("awaitCommand Started");
         while(this.isOnline) {
             command = sc.nextLine();
             result = intepretCommand(command);
