@@ -4,6 +4,7 @@ package Server;
 import Shared.Constants;
 import Shared.Commands;
 import Shared.PathResolver;
+import Server.rmi.Counter;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -31,8 +32,9 @@ class CommandInterpreter {
     private ArrayList<String> pathNames;
     private final String ROOT_SERVER = System.getProperty("user.dir") + "/FileSystem/ServerRoot";
     private int fileSharePort = 5001;
+    private Counter c;
 
-    public CommandInterpreter(Socket socket, ServerSocket fileSocket) throws IOException {
+    public CommandInterpreter(Socket socket, ServerSocket fileSocket, Counter c) throws IOException {
         this.socket = socket;
         this.fileSocket = fileSocket;
         this.pw = new PrintWriter(this.socket.getOutputStream());
@@ -41,6 +43,7 @@ class CommandInterpreter {
         this.pathNames = new ArrayList<>();
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ServerRoot");
         this.isOnline = true;
+        this.c = c;
     }
 
 
@@ -205,7 +208,8 @@ class CommandInterpreter {
                             os.flush();
                         }
                         os.close();
-
+                        // Incrementação do quantidade de ficheiros descarregados
+                        c.incrementQtdDown();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

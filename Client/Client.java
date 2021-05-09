@@ -1,18 +1,24 @@
 package Client;
 
 import Shared.Commands;
+import Shared.InterfaceCounter;
 import Shared.PathResolver;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.Socket;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.Scanner;
 
 
 
 public class Client {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, MalformedURLException, RemoteException, NotBoundException, InterruptedException {
         Socket socket = new Socket("localhost", 5000);
+        InterfaceCounter ic = (InterfaceCounter) Naming.lookup("tableload");
         Scanner sc = new Scanner(socket.getInputStream());
         PrintWriter pw = new PrintWriter(socket.getOutputStream());
 
@@ -23,7 +29,7 @@ public class Client {
         sc.nextLine(); //::>> Dispose of the result;
 
         String result, fullCommand;
-        CommandIntepreter ci = new CommandIntepreter(socket,sc, pw);
+        CommandIntepreter ci = new CommandIntepreter(socket,sc, pw, ic);
 
 
         Scanner input = new Scanner(System.in);
