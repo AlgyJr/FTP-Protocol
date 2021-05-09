@@ -1,13 +1,9 @@
 package Server;
 
-import Server.Auth.Authentication;
-import Server.rmi.Counter;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.rmi.registry.LocateRegistry;
 import java.util.Scanner;
 
 class Connection extends Thread {
@@ -16,20 +12,16 @@ class Connection extends Thread {
     private PrintWriter pw;
     private Scanner sc;
     private CommandInterpreter ci;
-    private Authentication auth;
 
-    public Connection(Socket s, ServerSocket fileSocket, Counter c) throws IOException {
+    public Connection(Socket s, ServerSocket fileSocket) throws IOException {
         this.socket = s;
         this.fileSocket = fileSocket;
-        this.ci = new CommandInterpreter(this.socket, this.fileSocket, c);
-        auth = new Authentication();
+        this.ci = new CommandInterpreter(this.socket, this.fileSocket);
         this.start();
     }
 
     public void run() {
-        // In case success on authentication
-        if (this.ci.isAuthenticated(auth))
-            this.ci.awaitCommand();
+        this.ci.awaitCommand();
     }
 }
 
@@ -64,13 +56,11 @@ class Connection extends Thread {
 
 public class Server {
     public static void main(String[] args) throws IOException {
-        Counter c = new Counter();
-        LocateRegistry.createRegistry(1099).rebind("statistics", c);
         ServerSocket ss = new ServerSocket(5000);
         ServerSocket ss2 = new ServerSocket(5050);
-        System.out.println("The Server is on...");
         while(true) {
-            new Connection(ss.accept(), ss2, c);
+            new Connection(ss.accept(), ss2);
+
         }
     }
 }

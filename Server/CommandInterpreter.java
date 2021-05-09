@@ -1,11 +1,9 @@
 package Server;
 
 
-import Server.Auth.Authentication;
 import Shared.Constants;
 import Shared.Commands;
 import Shared.PathResolver;
-import Server.rmi.Counter;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -33,9 +31,8 @@ class CommandInterpreter {
     private ArrayList<String> pathNames;
     private final String ROOT_SERVER = System.getProperty("user.dir") + "/FileSystem/ServerRoot";
     private int fileSharePort = 5001;
-    private Counter c;
 
-    public CommandInterpreter(Socket socket, ServerSocket fileSocket, Counter c) throws IOException {
+    public CommandInterpreter(Socket socket, ServerSocket fileSocket) throws IOException {
         this.socket = socket;
         this.fileSocket = fileSocket;
         this.pw = new PrintWriter(this.socket.getOutputStream());
@@ -44,48 +41,11 @@ class CommandInterpreter {
         this.pathNames = new ArrayList<>();
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ServerRoot");
         this.isOnline = true;
-        this.c = c;
     }
 
-    public boolean isAuthenticated(Authentication auth) {
-        String username, password;
-        boolean hasAuthenticated = false;
-        byte tryChances = 3;
-
-         do {
-            pw.println("Utilizador: ");
-            pw.flush();
-
-            // Receive username
-            username = sc.nextLine();
-
-            pw.println("Palavra-passe: ");
-            pw.flush();
-
-            // Reveive password
-            password = sc.nextLine();
-
-            System.out.println("Username: " + username + "\nPassword: " + password);
-
-            // Then check credentials
-            hasAuthenticated = auth.authenticate(username, password);
-
-             if (hasAuthenticated) {
-                 pw.println("true");
-             } else {
-                 pw.println("false");
-             }
-             pw.flush();
-
-             tryChances--;
-         } while (!hasAuthenticated && tryChances > 0);
-
-        return hasAuthenticated;
-    }
 
     public void awaitCommand() {
         String command, result;
-        System.out.println("awaitCommand Started");
         while(this.isOnline) {
             command = sc.nextLine();
             result = intepretCommand(command);
@@ -246,8 +206,7 @@ class CommandInterpreter {
                             os.flush();
                         }
                         os.close();
-                        // Incrementação do quantidade de ficheiros descarregados
-                        c.incrementQtdDown();
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -301,8 +260,8 @@ class CommandInterpreter {
 
     private String downloadFile(String command) {
         String result, fileName, message;
-        this.pw.println(command);
-        this.pw.flush();
+        //this.pw.println(command);
+        //this.pw.flush();
 
         //::>> Receber FileName e FileSize
         fileName = this.sc.nextLine();
@@ -318,7 +277,8 @@ class CommandInterpreter {
             @Override
             public void run() {
                 try {
-                    //Socket socket = new Socket("localhost",5000);
+                    Socket s = fileSocket.accept();
+                    //Socket socket = new Socket("localhost",5050);
                     DataInputStream is = new DataInputStream(socket.getInputStream());
                     FileOutputStream fo = new FileOutputStream( cwd.toString()  + "/" +  fileName);
                     double readChunk = 0;

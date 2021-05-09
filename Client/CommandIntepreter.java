@@ -2,7 +2,6 @@ package Client;
 
 import Shared.Commands;
 import Shared.Constants;
-import Shared.InterfaceCounter;
 import Shared.PathResolver;
 
 import java.io.*;
@@ -10,7 +9,6 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -59,9 +57,7 @@ public class CommandIntepreter {
     private PrintWriter pw;
     private Scanner sc;
     private Socket socket;
-    private InterfaceCounter counter;
-
-    public CommandIntepreter(Socket socket, Scanner sc, PrintWriter pw, InterfaceCounter counter) {
+    public CommandIntepreter(Socket socket, Scanner sc, PrintWriter pw) {
         this.socket = socket;
         this.sc = sc;
         this.pw = pw;
@@ -70,10 +66,9 @@ public class CommandIntepreter {
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
         this.sockerPort = 5001;
-        this.counter = counter;
     }
 
-    public void awaitCommand() throws RemoteException {
+    public void awaitCommand() throws FileNotFoundException {
         Scanner sc = new Scanner(System.in);
         while (this.isOnServer) {
             System.out.print(this.fs + PathResolver.getRelPathString(this.pathNames) + "$ ");
@@ -82,7 +77,7 @@ public class CommandIntepreter {
         }
     }
 
-    public String intepretCommand(String command) {
+    public String intepretCommand(String command) throws FileNotFoundException {
         String [] commandNdOptions = command.split(" ");
         String option = "";
         String action = commandNdOptions[0];
@@ -100,11 +95,62 @@ public class CommandIntepreter {
             case Commands.PWD: return "Avaliable";
             case Commands.MKDIR: return makeDirectory(option);
             case Commands.GET: return downloadFile(command);
+            case Commands.PUT: return sendFile(command);
             case Commands.MVS: {this.isOnServer = true; return "";}
             case Commands.MVC: {this.isOnServer = false; return "";}
             default:
                 return "Client: Command Not Found";
         }
+
+    }
+
+    private String sendFile(String command) throws FileNotFoundException {
+
+        this.pw.println(command);
+        this.pw.flush();
+        ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, command.split(" ")[1], this.pathNames);
+        if (pathNames == null)  {
+            this.pw.println(Constants.FILE_NOT_FOUND.name());
+            this.pw.flush();
+            return Constants.FILE_NOT_FOUND.name();
+        }
+
+        String filePath = PathResolver.generatePath(this.cwd.toString(), pathNames).toString();
+        System.out.println(filePath);
+        File fileObj = new File(filePath);
+
+        FileInputStream fi = new FileInputStream(fileObj);
+        long fileSize = fileObj.length();
+        System.out.println(fileSize);
+
+        //::>> Send FileName and FileSize
+        this.pw.println(fileObj.getName());
+        this.pw.flush();
+        this.pw.println(fileSize);
+        this.pw.flush();
+
+        Thread toWait = new Thread(() -> {
+
+            DataOutputStream os = null;
+            try {
+                Socket socket = new Socket("localhost",5050);
+                os = new DataOutputStream(socket.getOutputStream());
+                int chnkSize = 100;
+                byte[] byteArray = new byte[chnkSize];
+                int bytes;
+                while ((bytes = fi.read(byteArray, 0, chnkSize)) != -1) {
+                    System.out.println(bytes);
+                    os.write(byteArray);
+                    os.flush();
+                }
+                os.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        toWait.start();
+        return "File Upload Complete\n";
     }
 
     //::>> COMMANDS
@@ -223,15 +269,6 @@ public class CommandIntepreter {
             e.printStackTrace();
         }
 
-        try {
-            System.out.println();
-            System.out.println();
-            System.out.println("Quantidade de ficheiros descarregados: " + this.counter.getQtdDown());
-            System.out.println("Quantidade de ficheiros carregados: " + this.counter.getQtdUp());
-        } catch (RemoteException rm) {
-            rm.printStackTrace();
-        }
-
 
 
             /*DataInputStream is = new DataInputStream(this.socket.getInputStream());
@@ -269,6 +306,7 @@ public class CommandIntepreter {
             fo.close();
             is.close();
             pw.close();*/
+
 
         return "\nFile Download Complete!";
     }
