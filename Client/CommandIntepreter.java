@@ -226,8 +226,8 @@ public class CommandIntepreter {
         try {
             System.out.println();
             System.out.println();
-            System.out.println("Quantidade de ficheiros descarregados: " + this.counter.getQtdDown());
-            System.out.println("Quantidade de ficheiros carregados: " + this.counter.getQtdUp());
+            // Print of statistics
+            System.out.println(this.counter.statisticResume());
         } catch (RemoteException rm) {
             rm.printStackTrace();
         }
