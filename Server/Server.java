@@ -25,42 +25,18 @@ class Connection extends Thread {
     }
 }
 
-//class FileSharingThread extends Thread {
-//
-//    private Socket socket;
-//
-//    public FileSharingThread(Socket socket) {
-//        this.socket = socket;
-//        this.start();
-//    }
-//
-//    public void run() {
-//        try {
-//            System.out.println("Server Started!");
-//            Scanner is = new Scanner(this.socket.getInputStream());
-//            PrintWriter pw = new PrintWriter(this.socket.getOutputStream());
-//
-//            System.out.println(is.nextLine()); //::>> Prints : "Sending File"
-//            pw.println("File Has Been Read");
-//            pw.flush();
-//
-//            is.close();
-//            pw.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//}
-
-
 
 public class Server {
+    public static final int SERVER_PORT = 5000;
+    public static final int SERVER_FILE_SHARING_PORT = 5050;
+
     public static void main(String[] args) throws IOException {
-        ServerSocket ss = new ServerSocket(5000);
-        ServerSocket ss2 = new ServerSocket(5050);
+        ServerSocket ss = new ServerSocket(SERVER_PORT);
+        ServerSocket ss2 = new ServerSocket(SERVER_FILE_SHARING_PORT);
+        System.out.println("Server is running PORT:" + SERVER_PORT);
+        System.out.println("Server Files Port Will Run On PORT: " + SERVER_FILE_SHARING_PORT);
         while(true) {
             new Connection(ss.accept(), ss2);
-
         }
     }
 }
