@@ -144,16 +144,16 @@ class CommandInterpreter {
                 Path rPath = file.relativize(Path.of(System.getProperty("user.dir")));
                 String fPath = "|-";
                 if (Files.isDirectory(file))
-                    fPath += "";
-                else
                     fPath += "-";
+                else
+                    fPath += "---";
 
-                for(int i = 0; i < rPath.getNameCount(); i++) {
-                    if(Files.isDirectory(file))
-                        fPath += "-";
-                    else
-                        fPath += "-";
-                }
+//                //for(int i = 0; i < rPath.getNameCount(); i++) {
+//                    if(Files.isDirectory(file))
+//                        fPath += "-";
+//                    else
+//                        fPath += "--";
+//                //}
 
                 fPath += file.getFileName().toString();
                 return fPath;

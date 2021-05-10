@@ -38,6 +38,7 @@ class Connection extends Thread {
 
     }
 
+
     public void run() {
         // In case success on authentication
         if (this.ci.isAuthenticated(auth)) {
@@ -55,7 +56,7 @@ public class Server {
     public static void main(String[] args) {
         try {
             Counter c = new Counter();
-            LocateRegistry.createRegistry(1099).rebind("statistics", c);
+            LocateRegistry.createRegistry(4000).rebind("statistics", c);
             ServerSocket ss = new ServerSocket(SERVER_PORT);
             ServerSocket ss2 = new ServerSocket(SERVER_FILE_SHARING_PORT);
             System.out.println("Server is running PORT:" + SERVER_PORT);
@@ -64,6 +65,7 @@ public class Server {
                 new Connection(ss.accept(), ss2, c);
             }
         } catch (IOException ex) {
+            ex.printStackTrace();
             System.out.println("::::  SERVER CLOSED UNEXPECTEDLY");
             System.out.println("::::::::::::::::::::\n\n");
         }
