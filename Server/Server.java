@@ -22,7 +22,7 @@ class Connection extends Thread {
     public Connection(Socket s, ServerSocket fileSocket, Counter c)  {
         try {
             System.out.println(":::: NEW CONNECTION");
-            System.out.println("IP & Local Port: " + s.getInetAddress() +" : "+ s.getLocalPort() );
+            System.out.println("IP & Local Port: " + s.getLocalAddress() +" : "+ s.getLocalPort() );
             System.out.println("IP & Remote Port: "+ s.getInetAddress() + " : "+ s.getPort() );
             System.out.println("::::::::::::::::::::\n\n");
             this.socket = s;
