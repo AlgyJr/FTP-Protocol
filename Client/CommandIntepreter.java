@@ -41,7 +41,7 @@ public class CommandIntepreter {
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
         this.counter = counter;
-        this.hostForFileShare = "197.249.10.243";
+        this.hostForFileShare = "localhost";
     }
 
     public String intepretCommand(String command) throws FileNotFoundException {

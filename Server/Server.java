@@ -56,7 +56,7 @@ public class Server {
     public static void main(String[] args) {
         try {
             Counter c = new Counter();
-            LocateRegistry.createRegistry(4000).rebind("statistics", c);
+            LocateRegistry.createRegistry(1099).rebind("statistics", c);
             ServerSocket ss = new ServerSocket(SERVER_PORT);
             ServerSocket ss2 = new ServerSocket(SERVER_FILE_SHARING_PORT);
             System.out.println("Server is running PORT:" + SERVER_PORT);

@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 
