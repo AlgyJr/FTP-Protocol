@@ -30,6 +30,7 @@ public class CommandIntepreter {
     private Socket socket;
     private InterfaceCounter counter;
     private String username;
+    private String hostForFileShare;
 
     public CommandIntepreter(Socket socket, Scanner sc, PrintWriter pw, InterfaceCounter counter) {
         this.socket = socket;
@@ -40,6 +41,7 @@ public class CommandIntepreter {
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
         this.counter = counter;
+        this.hostForFileShare = "197.249.10.243";
     }
 
     public String intepretCommand(String command) throws FileNotFoundException {
@@ -86,16 +88,16 @@ public class CommandIntepreter {
                 Path rPath = file.relativize(Path.of(System.getProperty("user.dir")));
                 String fPath = "|-";
                 if (Files.isDirectory(file))
-                    fPath += "";
-                else
                     fPath += "-";
+                else
+                    fPath += "---";
 
-                for(int i = 0; i < rPath.getNameCount(); i++) {
-                    if(Files.isDirectory(file))
-                        fPath += "-";
-                    else
-                        fPath += "-";
-                }
+//                //for(int i = 0; i < rPath.getNameCount(); i++) {
+//                    if(Files.isDirectory(file))
+//                        fPath += "-";
+//                    else
+//                        fPath += "--";
+//                //}
 
                 fPath += file.getFileName().toString();
                 return fPath;
@@ -155,46 +157,67 @@ public class CommandIntepreter {
             if(fileName.equals(Constants.FILE_NOT_FOUND.name()))
                 return "::>> Error: File Not Found";
 
-            long fileSize = Long.parseLong(this.sc.nextLine());
-            //::>> Receive Port Number to Send The File
-            portForFileSharing = Integer.parseInt(this.sc.nextLine());
-            chunkSize = Integer.parseInt(this.sc.nextLine());
+            // Check if file Exists
+            char response = ' ';
+            File file = new File(cwd.toString() + "/" + fileName);
+            System.out.println(file.exists());
+            if (file.exists()) {
+                System.out.println("A duplicate file was found \n Would you like to overwrite [y/n]");
+                Scanner scn = new Scanner(System.in);
+                response = scn.nextLine().charAt(0);
+            }
 
-            Thread toWait = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Socket socket = new Socket("localhost",portForFileSharing);
-                        DataInputStream is = new DataInputStream(socket.getInputStream());
-                        FileOutputStream fo = new FileOutputStream( cwd.toString()  + "/" +  fileName);
-                        double readChunk = 0;
-                        double percentage;
+            if (response == 'y' || response == ' ') {
+                long fileSize = Long.parseLong(this.sc.nextLine());
+                //::>> Receive Port Number to Send The File
+                portForFileSharing = Integer.parseInt(this.sc.nextLine());
+                chunkSize = Integer.parseInt(this.sc.nextLine());
 
-                        byte[] bytes;
-                        while (!((bytes = is.readNBytes(chunkSize)).length == 0)) {
-                            readChunk += bytes.length;
-                            percentage = (readChunk / fileSize) * 100;
-                            System.out.print("\r" + df.format(percentage) + "%");
-                            fo.write(bytes);
+                Thread toWait = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Socket socket = new Socket(hostForFileShare, portForFileSharing);
+                            DataInputStream is = new DataInputStream(socket.getInputStream());
+                            FileOutputStream fo = new FileOutputStream(cwd.toString() + "/" + fileName);
+                            double readChunk = 0;
+                            double percentage;
+
+                            byte[] bytes;
+                            while (!((bytes = is.readNBytes(chunkSize)).length == 0)) {
+                                readChunk += bytes.length;
+                                percentage = (readChunk / fileSize) * 100;
+                                System.out.print("\r" + df.format(percentage) + "%");
+                                fo.write(bytes);
+                            }
+                            fo.close();
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                        fo.close();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+
                     }
+                });
 
+                try {
+                    toWait.start();
+                    toWait.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            });
 
-        try {
-            toWait.start();
-            toWait.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+                return "\nFile Download Complete!";
+            }
+            else{
+                // Ignore incoming info
+                sc.nextLine();
+                sc.nextLine();
+                sc.nextLine();
+                return "\nFile NOT downloaded";
+            }
 
-        return "\nFile Download Complete!";
+
     }
 
     private String uploadFile(String command) throws FileNotFoundException {
@@ -233,7 +256,7 @@ public class CommandIntepreter {
         Thread toWait = new Thread(() -> {
 
             try {
-                Socket socket = new Socket("localhost",portForFileShare);
+                Socket socket = new Socket(hostForFileShare,portForFileShare);
                 DataOutputStream os = new DataOutputStream(socket.getOutputStream());
 
                 double readChunk = 0;
