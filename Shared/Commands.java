@@ -6,8 +6,10 @@ public class Commands {
     public static final String PWD = "PWD"; //::>> Print Current Working Directory
     public static final String CS = "CS"; //::> Move to client side FileSystem
     public static final String SS = "SS"; //::> Move to ServerSide FileSystem
+    public static final String STAT = "STAT";
     public static final String MKDIR = "MKDIR"; //::>> Make a Directory
     public static final String EXIT = "EXIT";
+    public static final String SETCHUNK = "SETCHUNK";
     public static final String MVS = "MVS"; //::>> Move to server side
     public static final String MVC = "MVC"; //::>> MOve to client side
     public static final String GET = "GET"; //::>> Download File From Server
