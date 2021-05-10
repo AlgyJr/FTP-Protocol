@@ -131,12 +131,12 @@ class CommandInterpreter {
 
     //::>> COMMANDS
     private String listDirectory(String path) {
-        ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, path, this.pathNames);
+        ArrayList<String> pathNames = PathResolver.resolvePath(Path.of(ROOT_SERVER), path, this.pathNames);
         if (pathNames == null)  {
             return ":::> Error: Invalid Path For Operation";
         }
 
-        Path pathToWalk = PathResolver.generatePath(this.cwd.toString(), pathNames);
+        Path pathToWalk = PathResolver.generatePath(Path.of(ROOT_SERVER).toString(), pathNames);
         String dirTree = "";
 
         try(Stream<Path> walk = Files.walk(pathToWalk, PathResolver.DEFAULT_PATH_WALK_DEPTH)) {
@@ -173,14 +173,14 @@ class CommandInterpreter {
     }
 
     private void changeDirectory(String path) {
-        ArrayList<String> newPathNames = PathResolver.resolvePath(this.cwd, path, this.pathNames);
+        ArrayList<String> newPathNames = PathResolver.resolvePath(Path.of(ROOT_SERVER), path, this.pathNames);
         if(newPathNames == null) {
             System.out.println(":::> Error: Invalid Path For Operation");
             return;
         }
 
         this.pathNames = new ArrayList<>(newPathNames);
-        this.cwd = PathResolver.generatePath(ROOT_SERVER, newPathNames);
+        this.cwd = PathResolver.generatePath(Path.of(ROOT_SERVER).toString(), newPathNames);
     }
 
     private String makeDirectory(String folderName) {

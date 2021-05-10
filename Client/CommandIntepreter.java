@@ -24,7 +24,7 @@ public class CommandIntepreter {
     private Path cwd;
     private ArrayList<String> pathNames;
     public boolean isOnServer;
-    private final String ROOT_CLIENT = System.getProperty("user.dir") + "/FileSystem/ClientRoot";
+    private String ROOT_CLIENT = System.getProperty("user.dir") + "/FileSystem/ClientRoot";
     private PrintWriter pw;
     private Scanner sc;
     private Socket socket;
@@ -41,7 +41,7 @@ public class CommandIntepreter {
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
         this.counter = counter;
-        this.hostForFileShare = "197.249.10.243";
+        this.hostForFileShare = "localhost";
     }
 
     public String intepretCommand(String command) throws FileNotFoundException {
@@ -75,12 +75,12 @@ public class CommandIntepreter {
 
     //::>> COMMANDS
     private String listDirectory(String path) {
-        ArrayList<String> pathNames = PathResolver.resolvePath(this.cwd, path, this.pathNames);
+        ArrayList<String> pathNames = PathResolver.resolvePath(Path.of(ROOT_CLIENT), path, this.pathNames);
         if (pathNames == null)  {
             return ":::> Error: Invalid Path For Operation";
         }
 
-        Path pathToWalk = PathResolver.generatePath(this.cwd.toString(), pathNames);
+        Path pathToWalk = PathResolver.generatePath(Path.of(ROOT_CLIENT).toString(), pathNames);
         String dirTree = "";
 
         try(Stream<Path> walk = Files.walk(pathToWalk, PathResolver.DEFAULT_PATH_WALK_DEPTH)) {
@@ -117,14 +117,14 @@ public class CommandIntepreter {
     }
 
     private void changeDirectory(String path) {
-        ArrayList<String> newPathNames = PathResolver.resolvePath(this.cwd, path, this.pathNames);
+        ArrayList<String> newPathNames = PathResolver.resolvePath(Path.of(ROOT_CLIENT), path, this.pathNames);
         if(newPathNames == null) {
             System.out.println(":::> Error: Invalid Path For Operation");
             return;
         }
 
         this.pathNames = new ArrayList<>(newPathNames);
-        this.cwd = PathResolver.generatePath(ROOT_CLIENT, newPathNames);
+        this.cwd = PathResolver.generatePath(Path.of(ROOT_CLIENT).toString(), newPathNames);
     }
 
     private String makeDirectory(String folderName) {
@@ -323,6 +323,7 @@ public class CommandIntepreter {
         if(newPathNames == null)
             makeDirectory(this.username);
         this.cwd = Path.of(this.cwd.toString() + "/" + this.username);
+        ROOT_CLIENT = ROOT_CLIENT.toString() + "/" + this.username;
     }
 
     public void setUsername(String username) {

@@ -11,29 +11,28 @@ import java.net.Socket;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 
 
 public class Client {
-    private static String HOST = "197.249.10.243";
+    public static final String SERVER_ADDRESS = "localhost";
+    //197.249.10.243
     public static void main(String[] args) throws IOException, MalformedURLException, RemoteException, NotBoundException, InterruptedException {
         Socket socket = null;
         try {
-            socket = new Socket(HOST, 5000);
-        } catch (IOException e) {
-            System.out.println("::: COULD NOT CONNECT TO SERVER :::");
-            return;
-        }
+            socket = new Socket(SERVER_ADDRESS, 5000);
 
-        Scanner sc = new Scanner(socket.getInputStream());
-        PrintWriter pw = new PrintWriter(socket.getOutputStream());
-        String [] commandNDoptions = {""};
-        boolean isOnline = true;
 
-        InterfaceCounter ic = (InterfaceCounter) Naming.lookup("rmi://" + HOST + ":1099/statistics");
-        Scanner input = new Scanner(System.in);
-        CommandIntepreter ci = new CommandIntepreter(socket,sc, pw, ic);
+            Scanner sc = new Scanner(socket.getInputStream());
+            PrintWriter pw = new PrintWriter(socket.getOutputStream());
+            String [] commandNDoptions = {""};
+            boolean isOnline = true;
+
+            InterfaceCounter ic = (InterfaceCounter) Naming.lookup("rmi://" + SERVER_ADDRESS + ":1099/statistics");
+            Scanner input = new Scanner(System.in);
+            CommandIntepreter ci = new CommandIntepreter(socket,sc, pw, ic);
 
         String username, password;
         boolean hasAuthenticated = false;
@@ -134,6 +133,14 @@ public class Client {
             if(commandNDoptions[0].toUpperCase().equals(Commands.EXIT)) {
                 isOnline = false;
             }
+        }
+
+        } catch (IOException e) {
+            System.out.println("::: COULD NOT CONNECT TO SERVER :::");
+            return;
+        } catch (NoSuchElementException ex) {
+            System.out.println("::: CONNECTION DROPPED :::");
+            return;
         }
 
     }
