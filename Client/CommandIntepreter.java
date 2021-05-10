@@ -41,7 +41,8 @@ public class CommandIntepreter {
         this.cwd = Path.of(System.getProperty("user.dir") + "/FileSystem/ClientRoot");
         this.isOnServer = true;
         this.counter = counter;
-        this.hostForFileShare = "localhost";
+        this.hostForFileShare = "197.249.10.243"; // TODO this is the server IP
+        //197.249.10.243
     }
 
     public String intepretCommand(String command) throws FileNotFoundException {
@@ -160,7 +161,7 @@ public class CommandIntepreter {
             // Check if file Exists
             char response = ' ';
             File file = new File(cwd.toString() + "/" + fileName);
-            System.out.println(file.exists());
+            //System.out.println(file.exists());
             if (file.exists()) {
                 System.out.println("A duplicate file was found \n Would you like to overwrite [y/n]");
                 Scanner scn = new Scanner(System.in);

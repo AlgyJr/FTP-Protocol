@@ -17,7 +17,7 @@ import java.util.Scanner;
 
 
 public class Client {
-    public static final String SERVER_ADDRESS = "localhost";
+    public static final String SERVER_ADDRESS = "197.249.10.243"; // TODO this is the server IP
     //197.249.10.243
     public static void main(String[] args) throws IOException, MalformedURLException, RemoteException, NotBoundException, InterruptedException {
         Socket socket = null;
